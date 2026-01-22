@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <!-- 이미지 설정 이미지 이름, 파일 위치가 다르면 파일 위치까지, 크기 설정(width,heigh)-->
+    <h2>이미지 태그</h2>
+    <!--alt : 이미지가 깨질 때 대체 텍스트
+        width / height : 이미지 크기 지정
+        loading="lazy" : 스크롤해야 보이는 이미지를 늦게 코딩
+    -->
+    <img src="assest/kitten.jpg" alt="떼껄룩" width="300" />
+
+    <!-- ./ 치면 밑에 같은 폴더에 있는 파일들이 보인다 -->
+    <h2>오디오 태그</h2>
+    <!-- controls : 재생 컨트롤 표시, loop : 반복 재생 -->
+    <audio src="assest/audio.mp3" controls loop></audio>
+
+    <h2>비디오 태그</h2>
+    <!-- controls : 재생 컨트롤 표시, poster : 썸네일 이미지 표시 -->
+    <video
+      src="assest/video.mp4"
+      controls
+      poster="assest/thumbnail.png"
+    ></video>
+
+    <h2>외부 미디어(iframe)</h2>
+
+    <!-- 유튜브 영상 공유 -> 퍼가기 -> 코드 복사 -->
+    <iframe
+      width="560"
+      height="315"
+      src="https://www.youtube.com/embed/F1oI0lzQAjE"
+      title="YouTube video player"
+      frameborder="0"
+      allow="
+        accelerometer;
+        autoplay;
+        clipboard-write;
+        encrypted-media;
+        gyroscope;
+        picture-in-picture;
+        web-share;
+      "
+      allowfullscreen
+    ></iframe>
+  </body>
+</html>
