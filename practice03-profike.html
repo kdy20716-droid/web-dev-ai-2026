@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <h1>주문하기</h1>
+    <form action="" method="post">
+      고객명 <input type="text" name="name" required /><br />
+    </form> <br />
+    
+    <form action="" method="post">
+      전화번호 <input type="number" name="number" required /><br />
+    </form> <br />
+
+    <form action="" method="post">
+      이메일 <input type="email" name="number" required /> 
+    </form> <br />
+
+    <form action="">
+      <fieldset>
+        <legend>피자 사이즈</legend>
+        <label><input type="radio" id="small" name="size" value="S" /> small</label>
+        <label><input type="radio" id="midium" name="size" value="M" /> midium</label>
+        <label><input type="radio" id="large" name="size" value="L" /> large</label>
+      </fieldset>
+
+      <form action="">
+      <fieldset>
+        <legend>토핑 선택</legend>
+        <label><input type="checkbox" id="베이컨" name="size" value="베이컨" /> 베이컨</label>
+        <label><input type="checkbox" id="치즈" name="size" value="치즈" /> 치즈</label>
+        <label><input type="checkbox" id="양파" name="size" value="양파" /> 양파</label>
+        <label><input type="checkbox" id="버섯" name="size" value="버섯" /> 버섯</label>
+      </fieldset>
+      희망 배송 시간<form action="">
+     <input type="time" />
+    </form> <br />
+    <form action="">
+      배송시 요청사항
+      <textarea name="mamo"></textarea> <br /> <br />
+      <button type="submit">주문하기</button>
+    </form>
+  </body>
+</html>
