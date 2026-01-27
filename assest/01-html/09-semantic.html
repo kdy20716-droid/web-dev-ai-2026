@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <h2>레이아웃 1 : div로만 구성</h2>
+    <div id="header">
+      <h1>LOGO</h1>
+      <div id="nav">GNB</div>
+      <!-- Global Navigation Bar -->
+    </div>
+    <div id="main">
+      <div class="main-image">Main Image 1</div>
+      <div class="main-image">Main Image 2</div>
+      <div class="main-content">
+        <h2>Content</h2>
+        <p>Content Text</p>
+      </div>
+    </div>
+    <!-- 그냥 section은 id .section은 class -->
+    <div id="section">
+      <div class="section-content"></div>
+      <div id="article">Article</div>
+      <div id="aside">Aside</div>
+    </div>
+    <div id="footer">Footer</div>
+
+    <h2>레이아웃 2 : 시멘틱 태그 사용</h2>
+    <!-- 레이아웃도 의미있는 태그를 사용하자 -->
+    <header>
+      <h1>LOGO</h1>
+      <div id="nav">GNB</div>
+      <!-- Global Navigation Bar -->
+    </div>
+    </header>
+    <main>
+      <div class="main-image">Main Image 1</div>
+      <div class="main-image">Main Image 2</div>
+      <div class="main-content">
+        <h2>Content</h2>
+        <p>Content Text</p>
+      </div>
+      </main>
+    <section>
+    <!-- 그냥 section은 id .section은 class -->
+    <div id="section">
+      <div class="section-content"></div>
+      <div id="article">Article</div>
+      <div id="aside">Aside</div>
+      </section>
+    </div>
+    <div id="footer">Footer</div>
+  </body>
+</html>

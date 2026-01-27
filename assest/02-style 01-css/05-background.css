@@ -1,0 +1,44 @@
+.box {
+  height: 150px;
+  border: 4px solid;
+  padding: 20px;
+  margin: 20px;
+}
+/* background-color */
+.bg-color {
+  background: teal;
+}
+/* background-clip */
+.clip {
+  background-color: orange;
+}
+.padding-box {
+  background-clip: padding-box;
+}
+.border-box {
+  background-clip: border-box;
+}
+.content-box {
+  background-clip: content-box;
+}
+
+/* background-image */
+.bg-image {
+  background-image: url(../01-html/kitten.jpg);
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-attachment: fixed;
+}
+/* gradient */
+.bg-gradient {
+  background: linear-gradient(
+    120deg,
+    rgb(130, 25, 151),
+    rgb(76, 103, 163),
+    rgb(98, 216, 167)
+  );
+}
+.bg-radial {
+  background: radial-gradient (circle, blue, pink);
+}

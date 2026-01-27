@@ -1,0 +1,96 @@
+@import url("https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap");
+/* front-family */
+/* 컴퓨너 내장되있는 폰트는 나오지만 없을시 기본 문체가 나옴 */
+.ff1 {
+  font-family: "맑은 고딕", "Noto Sans KR", "sans-serif";
+}
+.ff2 {
+  font-family: "궁서", serif;
+}
+.ff3 {
+  font-family: "Roboto";
+}
+/* font-size */
+.fsl {
+  font-size: 20px;
+}
+.fs2 {
+  /* 부모 사이즈가 30px -> 30*2 = 60px */
+  font-size: 2em;
+}
+.fs3 {
+  /* 웹사이트 기준 기본 사이즈가 16px -> 16*2 =32px */
+  font-size: 2rem;
+}
+/* vw는 창의 크기에 따라서 폰트 사이즈가 바뀜 */
+.fs4 {
+  font-size: 2vw;
+}
+/* clamp(최소값, 기준값, 최대값) */
+.fs5 {
+  font-size: clamp(1rem, 2vw, 2rem);
+}
+.fw1 {
+  font-weight: 400;
+}
+.fw2 {
+  font-weight: bold;
+}
+.fw3 {
+  font-weight: lighter;
+}
+/* line-height: 줄간격 */
+/* 1.5 ~ 1.8을 가장 많이씀 */
+.lh {
+  line-height: 1.5;
+}
+/* letter-spacing 글자 간격 */
+.is {
+  letter-spacing: 5px;
+}
+/* text-align */
+.ta1 {
+  text-align: left;
+}
+.ta2 {
+  text-align: center;
+}
+.ta3 {
+  text-align: right;
+}
+/* color */
+/* 색상명 : 인식하는 기본 생상명 web safe color 216가지 */
+.c-name {
+  color: red;
+}
+.c-16 {
+  color: #5027e6;
+}
+.c-rgb {
+  /* red(0~255), green(0~255), blue(0~255) */
+  color: rgb(111, 214, 171);
+  background: rgba(0, 0, 0, 0.5);
+}
+/* .c-rgba { 
+  color: rgba(109, 84, 84, 0.5);
+} */
+.c-hsl {
+  /* 생상환(0~360), 채도(0~100%), 밝기(0~100%) */
+  color: hsla(100, 50%, 50%, 0.5);
+}
+
+/* text-decoration */
+.td1 {
+  text-decoration: underline;
+}
+.td2 {
+  text-decoration: none;
+}
+/* text-overflow */
+.to {
+  width: 140px;
+  background: pink;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <link rel="stylesheet" href="03-css-priority.css" />
+  </head>
+  <body>
+    <h1>선택자 우선순위</h1>
+
+    <div class="rule-test">
+      <h2>1. 같은 선택자, 나중 규칙이 이김</h2>
+    </div>
+
+    <div id="priarity" class="box" style="background: purple">우선순위</div>
+
+    <h2>2. : is, where 우선순위</h2>
+    <div class="is-where">is/where 테스트</div>
+
+    <h2>3. css 변수</h2>
+    <div class="theme">테마 변경</div>
+    <div class="theme dark">다크 모드</div>
+  </body>
+</html>
