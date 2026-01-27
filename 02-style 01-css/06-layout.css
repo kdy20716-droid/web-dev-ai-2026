@@ -80,3 +80,77 @@
 .box-border {
   box-sizing: border-box;
 }
+.display-inline {
+  display: inline-block;
+  width: 200px;
+  height: 100px;
+  background: lightcoral;
+  margin: 10px;
+  padding: 10px;
+}
+.display-block {
+  display: block;
+}
+.float {
+  float: right;
+  width: 80px;
+  height: 80px;
+  background: skyblue;
+  margin: 5px;
+  text-align: center;
+  line-height: 80px;
+}
+/* position */
+.outer {
+  width: 400px;
+  height: 300px;
+  background: rgb(187, 187, 187);
+  position: relative;
+  overflow: auto;
+}
+.position-box {
+  width: 50px;
+  height: 50px;
+}
+.relative {
+  background: orange;
+  top: 10px;
+  left: 20px;
+}
+.absolute {
+  width: 50px;
+  height: 50px;
+  background: green;
+  position: absolute;
+  top: 10px;
+}
+.fixed-p {
+  background: pink;
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 3;
+}
+.sticky {
+  background: blue;
+  position: sticky;
+  top: 0px;
+}
+.vd {
+  width: 100px;
+  height: 100px;
+  background: rgb(182, 182, 182);
+  margin: 10px;
+  display: inline-block;
+}
+.hidden {
+  visible: hidden;
+}
+.hidden {
+  /* 보이지는 않는데 있었던 자리 그대로 */
+  visiblity: hidden;
+}
+.none {
+  /* 존재 자체를 화면에서 없앰 */
+  display: none;
+}
