@@ -1,6 +1,6 @@
 body {
   margin: 0;
-  height: 100vh;
+  min-height: 100vh;
   background: linear-gradient(135deg, rgb(255, 140, 45), rgb(233, 27, 112));
   display: flex;
   flex-direction: column;
@@ -21,6 +21,10 @@ body {
   padding-bottom: 20px;
 }
 
+.box + .box {
+  margin-top: 50px;
+}
+
 .profile {
   width: 80px;
   height: 80px;
@@ -39,42 +43,36 @@ body {
   margin: 10px 0 5px 0;
 }
 
-.rect-box1 {
-  width: 160px;
-  height: 28px;
-  border-radius: 10px;
-  margin-top: 10px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  border: 1.5px solid #ffffff;
-  background: #ffffff;
-  color: black;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-size: 10px;
-  text-decoration: none;
-}
-
-.rect-box1:hover {
-  background: #e0e0e0;
-  cursor: pointer;
-}
-
-.rect-box2:hover {
-  background: rgba(255, 255, 255, 0.2);
-  cursor: pointer;
-}
+.rect-box1,
 .rect-box2 {
   width: 160px;
   height: 28px;
   border-radius: 10px;
   margin-top: 10px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  border: 2px solid #ffffff;
+  box-shadow: 10px 5px 8px rgba(0, 0, 0, 0.2);
   display: flex;
   justify-content: center;
   align-items: center;
   font-size: 10px;
   text-decoration: none;
+  cursor: pointer;
+}
+
+.rect-box1 {
+  border: 1.5px solid #ffffff;
+  background: #ffffff;
+  color: black;
+}
+
+.rect-box1:hover {
+  background: #e0e0e0;
+}
+
+.rect-box2 {
+  border: 2px solid #ffffff;
   color: white;
+}
+
+.rect-box2:hover {
+  background: rgba(255, 255, 255, 0.2);
 }
