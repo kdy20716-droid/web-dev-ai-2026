@@ -11,7 +11,7 @@ body {
   width: 200px;
   height: auto;
   border-radius: 10px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: 15px 10px 10px rgba(0, 0, 0, 0.2);
   border: 2px solid #ffffff;
   margin-top: 30px;
   display: flex;
@@ -52,6 +52,7 @@ body {
   justify-content: center;
   align-items: center;
   font-size: 10px;
+  text-decoration: none;
 }
 
 .rect-box1:hover {
@@ -74,4 +75,6 @@ body {
   justify-content: center;
   align-items: center;
   font-size: 10px;
+  text-decoration: none;
+  color: white;
 }
