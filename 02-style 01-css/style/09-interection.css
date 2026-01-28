@@ -1,0 +1,81 @@
+.container {
+  display: flex;
+  gap: 10px;
+  border: 1px solid #eee;
+}
+.box {
+  width: 140px;
+  height: 140px;
+  background: #333;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  font-size: 1.2rem;
+}
+.transition {
+  transition: all 3s linear;
+}
+.transition:hover {
+  transform: scale(1.2);
+  background: #ffa114;
+}
+.scale {
+  background: indianred;
+}
+.scale:hover {
+  transform: scale(1.2); /* 확대 */
+}
+.rotate {
+  background: indigo;
+}
+.rotate:hover {
+  transform: rotate(30deg); /* 회전 */
+}
+.translate {
+  background: cadetblue;
+}
+.translate:hover {
+  transform: translate(20px, 50px); /* 이동 */
+}
+.skew:hover {
+  transform: skew(10deg, -10deg); /* 기울이기 */
+}
+/* Animation */
+@keyframes bounce {
+  0% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-50px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
+}
+.ani-once {
+  animation: bounce 2s linear 1;
+}
+.ani-loop {
+  background: navy;
+  animation: bounce 2s linear infinite;
+}
+.ani-pause {
+  background: salmon;
+  animation: bounce 1s linear infinite;
+}
+.ani-pause:hover {
+  animation-play-state: paused;
+}
+.perspective {
+  perspective: 200px; /* 원근 거리 */
+}
+.p-3d {
+  background: seagreen;
+  transition: transform 2s;
+  transform-style: preserve-3d; /* 3D 유지 */
+}
+.p-3d:hover {
+  transform: rotateY(180deg);
+}
