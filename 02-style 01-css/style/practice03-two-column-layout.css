@@ -1,0 +1,191 @@
+body {
+  margin: 0;
+  background-color: #333;
+}
+
+/* 배경 이미지 전용 스타일 */
+.bg-image {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-size: auto 100%;
+  background-repeat: no-repeat;
+  background-position: left top;
+  z-index: -1; /* 내용 뒤로 보내기 */
+  filter: brightness(0.5);
+}
+
+/* 호버 이미지 그룹 컨테이너 */
+.hover-bg-group {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* 호버 이미지 스타일 */
+.hover-bg-group img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* 비율을 유지하면서 이미지가 잘리지 않게 전체 표시 (여백 생길 수 있음) */
+  /* object-fit: cover; (비율 유지하며 가득 채우기 - 이미지가 확대되어 잘릴 수 있음) */
+  /* object-fit: fill; (비율 무시하고 가득 채우기 - 이미지가 찌그러질 수 있음) */
+  /* object-fit: scale-down; (none과 contain 중 더 작은 크기 적용) */
+  opacity: 0; /* 기본적으로 숨김 */
+  transition: opacity 0.5s ease; /* 부드러운 전환 */
+  filter: brightness(0.4); /* 어둡게 처리 */
+}
+
+.hover-bg-group img.active {
+  opacity: 1; /* 활성화 시 보임 */
+}
+
+.container {
+  background-color: white;
+  /* 왼쪽 200px 만큼 여백을 주어 배경이 보이게 함 */
+  position: relative;
+  margin-left: 200px;
+  min-height: 100vh;
+  padding: 50px 8px 0;
+  box-sizing: border-box;
+  /* 그림자로 입체감 추가 */
+  box-shadow: -10px 0 20px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* 컨텐츠들이 배경 이미지 위에 오도록 설정 */
+.page-title,
+.main-img,
+.content,
+.grid-box {
+  position: relative;
+  z-index: 1;
+}
+
+.page-title {
+  font-size: 1.5rem;
+  align-self: flex-start; /* 왼쪽 정렬 */
+  margin: -50px 0 20px 0;
+  transition: color 0.5s ease;
+}
+/* 사이드바 스타일 */
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 200px;
+  height: 100%;
+  padding: 10px 20px;
+  box-sizing: border-box;
+  color: white;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.sidebar .logo {
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 0;
+  text-align: center;
+  text-decoration: underline;
+}
+
+.sidebar .menu {
+  list-style: none;
+  padding: 0;
+  text-align: center;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.sidebar .menu li {
+  margin-bottom: 0;
+  padding: 10px 20px;
+  cursor: pointer;
+  font-size: 18px;
+  border-radius: 15px;
+  transition: background-color 0.3s;
+}
+
+.sidebar .menu li:hover {
+  background-color: black;
+}
+
+.main-img {
+  width: 35%;
+  height: auto; /* <-- 이미지 크기 조절 (100%는 꽉 참, 80%는 여백 있음) */
+  /* height: auto; (기본값: 가로 사이즈에 맞춰 비율 자동 유지) */
+  /* aspect-ratio: 16 / 9; (강제로 비율을 바꾸고 싶으면 주석 해제 후 숫자 변경) */
+  /* object-fit: cover; (비율 변경 시 이미지 찌그러짐 방지) */
+  max-width: 100%;
+  border-radius: 0;
+  margin-bottom: 40px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.content {
+  width: 100%;
+  max-width: none;
+  color: black;
+  line-height: 1.8;
+  font-size: 1.1rem;
+  transition: color 0.5s ease;
+}
+
+.content p:last-child {
+  margin-bottom: 0;
+}
+
+.grid-box {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0;
+  display: grid;
+  /* auto-fit: 화면 크기에 맞춰 컬럼 개수 자동 조절 (줄바꿈 발생) */
+  /* minmax(250px, 1fr): 최소 250px 확보, 남으면 늘어남. 공간 부족 시 아래로 떨어짐 */
+  /* 사용법: 250px 숫자를 키우면 더 빨리 줄바꿈되고, 줄이면 더 늦게 줄바꿈됨 */
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 10px;
+  margin-top: 0;
+}
+
+.box-item {
+  background-color: rgb(102, 102, 102);
+  height: 80px; /* 높이 축소 */
+  border-radius: 20px; /* 모서리 둥글게 */
+  color: white;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.card-title {
+  text-align: center;
+  font-weight: lighter;
+  margin-bottom: 5px;
+}
+
+.card-content {
+  padding-left: 8px;
+  font-weight: lighter;
+}
+
+/* 호버 시 텍스트 색상 변경 */
+.container.text-white .page-title,
+.container.text-white .content {
+  color: white;
+}

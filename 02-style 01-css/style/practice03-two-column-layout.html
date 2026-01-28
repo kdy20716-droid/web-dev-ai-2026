@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <link rel="stylesheet" href="practice03-two-column-layout.css" />
+  </head>
+  <body>
+    <!-- 배경 이미지용 div 추가 -->
+    <div
+      class="bg-image"
+      style="background-image: url(&quot;../assest/bg.jpg&quot;)"
+    ></div>
+
+    <!-- 왼쪽 사이드바 (로고 및 메뉴) -->
+    <div class="sidebar">
+      <div class="logo">LOGO</div>
+      <ul class="menu">
+        <li>Pasta</li>
+        <li>Pizza</li>
+        <li>Risotto</li>
+        <li>Steak</li>
+        <li>Salad</li>
+      </ul>
+    </div>
+
+    <div class="container">
+      <!-- 호버 효과용 이미지 그룹 (기본적으로 숨김) -->
+      <div class="hover-bg-group">
+        <img src="../assest/pasta (1).gif" alt="hover image 1" />
+        <img src="../assest/pizza-cheese.gif" alt="hover image 2" />
+        <img src="../assest/food-cheese.gif" alt="hover image 3" />
+        <img src="../assest/grilling-meat-guga-foods.gif" alt="hover image 4" />
+        <img src="../assest/salad.gif" alt="hover image 5" />
+      </div>
+
+      <!-- 메인 이미지 -->
+      <p1 class="page-title">Content Title</p1>
+      <img src="../assest/content.jpg" class="main-img" alt="메인 이미지" />
+
+      <!-- 본문 내용 -->
+      <div class="content">
+        <p>
+          Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do
+          eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad
+          minim veniam, quis nostrud exercitation ullamco laboris nisi ut
+          aliquip ex ea commodo consequat. Duis aute irure dolor in
+          reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla
+          pariatur. Excepteur sint occaecat cupidatat non proident, sunt in
+          culpa qui officia deserunt mollit anim id est laborum. Sed ut
+          perspiciatis unde omnis iste natus error sit voluptatem accusantium
+          doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo
+          inventore veritatis et quasi architecto beatae vitae dicta sunt
+          explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut
+          odit aut fugit, sed quia consequuntur magni dolores eos qui ratione
+          voluptatem sequi nesciunt. Neque porro quisquam est, qui dolorem ipsum
+          quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam
+          eius modi tempora incidunt ut labore et dolore magnam aliquam quaerat
+          voluptatem. Ut enim ad minima veniam, quis nostrum exercitationem
+          ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi
+          consequatur?
+        </p>
+      </div>
+      <div class="grid-box">
+        <div class="box-item">
+          <div class="card-title">Card Title 1</div>
+          <div class="card-content">Card content 1</div>
+        </div>
+        <div class="box-item">
+          <div class="card-title">Card Title 2</div>
+          <div class="card-content">Card content 2</div>
+        </div>
+        <div class="box-item">
+          <div class="card-title">Card Title 3</div>
+          <div class="card-content">Card content 3</div>
+        </div>
+      </div>
+
+      <div class="content">
+        <p>
+          Lorem ipsum dolor sit amet consectetur adipisicing elit. Soluta
+          nesciunt reiciendis eos dolor id, cupiditate nobis nostrum ut et modi
+          cumque culpa eaque! Voluptas facere iure laudantium cupiditate
+          voluptatibus? Molestiae?Lorem, ipsum dolor sit amet consectetur
+          adipisicing elit. Corporis nisi dignissimos blanditiis qui saepe nam
+          voluptatibus sint commodi, molestias alias voluptates voluptatum,
+          praesentium modi aperiam? Repellendus debitis nesciunt corporis qui.
+          Lorem ipsum dolor, sit amet consectetur adipisicing elit. Laborum
+          repellendus veritatis laudantium amet, non harum minima consequatur
+          obcaecati ipsum cum unde fuga. Nemo ipsa accusantium molestias commodi
+          qui soluta suscipit. Lorem ipsum dolor sit amet consectetur
+          adipisicing elit. Laudantium facere modi, ducimus vitae earum nihil
+          eligendi ullam vel expedita officia dolore excepturi quidem quia
+          voluptas exercitationem libero? Similique, consequatur tenetur. Lorem
+          ipsum dolor sit amet, consectetur adipisicing elit. Qui earum odio,
+          excepturi fuga optio minima distinctio ratione aliquam et cum
+          provident tempore soluta! Ex deserunt quae laborum unde suscipit quam!
+          Lorem ipsum dolor, sit amet consectetur adipisicing elit. Nostrum
+          architecto praesentium aspernatur quos neque magni deserunt facilis
+          sint perspiciatis minus labore quas alias voluptatem asperiores sed
+          ad, blanditiis non rem. Lorem, ipsum dolor sit amet consectetur
+          adipisicing elit. Vel, fugit pariatur voluptas aspernatur dolores ut
+          accusamus mollitia voluptatum ad esse beatae provident sit vitae
+          minus! Alias quis est impedit ipsum? Lorem ipsum dolor sit amet,
+          consectetur adipisicing elit.
+        </p>
+      </div>
+    </div>
+
+    <script>
+      const menuItems = document.querySelectorAll(".sidebar .menu li");
+      const hoverImages = document.querySelectorAll(".hover-bg-group img");
+      const container = document.querySelector(".container");
+
+      menuItems.forEach((item, index) => {
+        item.addEventListener("mouseenter", () => {
+          // 모든 이미지 숨기기 (혹시 겹칠 경우 대비)
+          hoverImages.forEach((img) => img.classList.remove("active"));
+          // 해당 인덱스의 이미지 보이기
+          if (hoverImages[index]) {
+            hoverImages[index].classList.add("active");
+          }
+          container.classList.add("text-white");
+        });
+        item.addEventListener("mouseleave", () => {
+          if (hoverImages[index]) hoverImages[index].classList.remove("active");
+          container.classList.remove("text-white");
+        });
+      });
+    </script>
+  </body>
+</html>
