@@ -139,7 +139,9 @@ header {
     gap: 15px;
   }
   .menu {
-    gap: 2vw;
+    gap: 10vw;
+    justify-content: center;
+    flex-wrap: wrap;
     /* 창 크기에 따라 간격이 변하게 하려면 vw 단위를 사용하세요. 위 값을 조절하면 간격 비율이 바뀝니다 */
   }
   .hero {
