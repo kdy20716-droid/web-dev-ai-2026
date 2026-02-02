@@ -1,0 +1,29 @@
+body {
+  margin: 0;
+  font-family: sans-serif;
+}
+
+.hero {
+  min-height: 100vh;
+  height: auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  text-align: center;
+  padding-top: 80px;
+  padding-bottom: 50px;
+  box-sizing: border-box;
+}
+
+.main-title {
+  font-size: 3rem;
+  font-weight: 900;
+  margin-bottom: 0;
+}
+
+.sub-title {
+  font-size: 2rem;
+  font-weight: 900;
+  margin-top: 0;
+}

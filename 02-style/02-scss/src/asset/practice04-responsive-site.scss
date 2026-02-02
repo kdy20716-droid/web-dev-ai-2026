@@ -1,0 +1,172 @@
+body {
+  margin: 0;
+  font-family: sans-serif;
+}
+
+header {
+  padding: 10px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-sizing: border-box;
+  border-bottom: 1px solid lightgray;
+}
+
+.logo {
+  font-size: 40px;
+  font-weight: bold;
+}
+
+.menu {
+  display: flex;
+  gap: 30px;
+  font-size: 18px;
+}
+
+.menu a {
+  text-decoration: none;
+  color: rgb(138, 138, 138);
+}
+
+.hero {
+  min-height: 100vh;
+  height: auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  text-align: center;
+  padding-top: 80px;
+  padding-bottom: 50px;
+  box-sizing: border-box;
+}
+
+.main-title {
+  font-size: 3rem;
+  font-weight: 900;
+  margin-bottom: 0;
+}
+
+.sub-title {
+  font-size: 2rem;
+  font-weight: 900;
+  margin-top: 0;
+}
+
+.circle-container {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 200px;
+  /* 원 사이의 간격을 조절하려면 위 gap 값을 변경 */
+  margin-top: 0px;
+  /* 서브 타이틀과 원 사이의 간격을 조절하려면 위 margin-top 값을 변경 */
+  width: 100%;
+  max-width: 1700px;
+  justify-content: center;
+  padding: 0 20px;
+  box-sizing: border-box;
+}
+
+.circle {
+  width: 300px;
+  height: 300px;
+  /* 원의 크기를 조절하려면 위 width와 height 값을 변경 */
+  border-radius: 50%;
+  justify-self: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  font-weight: bold;
+  font-size: 1.5rem;
+}
+
+.red {
+  background-color: rgba(236, 63, 63, 0.712);
+}
+.orange {
+  background-color: rgba(253, 130, 48, 0.863);
+}
+.green {
+  background-color: rgba(11, 170, 122, 0.836);
+}
+.blue {
+  background-color: rgba(22, 130, 253, 0.815);
+}
+
+.card-container {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 30px;
+  /* 카드 사이의 간격을 조절하려면 위 gap 값을 변경하세요 */
+  width: 100%;
+  max-width: 100%;
+  /* 카드 전체 영역의 최대 너비를 조절하려면 위 max-width 값을 변경하세요 */
+  margin-top: 50px;
+  /* 원과 카드 사이의 간격을 조절하려면 위 margin-top 값을 변경하세요 */
+  padding: 0 20px;
+  box-sizing: border-box;
+}
+
+.card {
+  border: 1px solid gray;
+  padding: 10px;
+  text-align: center;
+}
+
+.card img {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+
+/* Media Queries */
+@media (max-width: 1600px) {
+  .circle-container {
+    gap: 50px;
+    /* 화면이 1600px보다 작아지면 원 사이 간격을 50px로 줄입니다. 위 gap 값을 조절하세요 */
+  }
+}
+
+@media (max-width: 1200px) {
+  /* Header & Hero */
+  header {
+    flex-direction: column;
+    gap: 15px;
+  }
+  .menu {
+    gap: 10vw;
+    justify-content: center;
+    flex-wrap: wrap;
+    /* 창 크기에 따라 간격이 변하게 하려면 vw 단위를 사용하세요. 위 값을 조절하면 간격 비율이 바뀝니다 */
+  }
+  .hero {
+    padding-top: 150px;
+    /* 메인 타이틀의 위치를 조절하려면 위 padding-top 값을 변경하세요 */
+  }
+  /* Circle Container */
+  .circle-container {
+    grid-template-columns: repeat(2, 1fr);
+    max-width: 600px;
+    /* 화면이 1200px보다 작아지면 2줄로 바뀝니다. 위 max-width 값을 조절하세요 */
+  }
+}
+
+@media (max-width: 1000px) {
+  .card-container {
+    grid-template-columns: repeat(2, 1fr);
+    /* 화면이 1000px보다 작아지면 2줄로 바뀝니다. 위 max-width 값을 조절하세요 */
+  }
+}
+
+@media (max-width: 600px) {
+  .circle-container,
+  .card-container {
+    grid-template-columns: 1fr;
+    /* 화면이 600px보다 작아지면 1줄로 바뀝니다 */
+  }
+}

@@ -1,0 +1,28 @@
+header {
+  padding: 10px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-sizing: border-box;
+  border-bottom: 1px solid lightgray;
+}
+
+.logo {
+  font-size: 40px;
+  font-weight: bold;
+}
+
+.menu {
+  display: flex;
+  gap: 30px;
+  font-size: 18px;
+
+  a {
+    text-decoration: none;
+    color: rgb(138, 138, 138);
+  }
+}

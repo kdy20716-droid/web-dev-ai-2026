@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <h1>버튼 컴포넌트</h1>
+    <button class="btn" disabled>Button</button>
+    <a class="btn btn--red" href="">Warning</a>
+    <div class="btn btn--ghost">Div Button</div>
+    <button class="btn btn--blue">결제하기</button>
+    <button class="btn">취소하기</button>
+
+    <h2>카드 컴포넌트</h2>
+    <div class="card">
+      <div class="card__media"></div>
+      <div class="card__body">
+        <div class="card__title">Lorem Ipsum</div>
+        <div class="card__text">
+          Lorem ipsum dolor sit amet consectetur adipisicing elit. Eius delectus
+          ipsam, cumque velit ullam a praesentium officiis repudiandae assumenda
+          iusto odio aperiam sequi corporis enim suscipit inventore quod autem
+          eveniet!
+        </div>
+      </div>
+    </div>
+
+    <div class="card card--bold">
+      <img src="../assest/content.jpg" class="card__media" alt="" />
+      <div class="card__body">
+        <!-- BEM(Block__Element--Modifier)
+             - Block : 재사용 가능한 블록 (상위 태그) 
+             - Element : 블록에 종속하는 하위요쇼 (하위 태그들)
+             - Modifier : 블록이나 엘리멘트의 변형 또는 속성 (모양, 상태 등)을 의미
+         -->
+        <div class="card__title card__title--thin">Lorem Ipsum</div>
+        <div class="card__text">
+          Lorem ipsum dolor sit amet consectetur adipisicing elit. Eius delectus
+          ipsam, cumque velit ullam a praesentium officiis repudiandae assumenda
+          iusto odio aperiam sequi corporis enim suscipit inventore quod autem
+          eveniet!
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

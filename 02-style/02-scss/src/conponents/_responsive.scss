@@ -1,0 +1,46 @@
+/* Media Queries */
+@media (max-width: 1600px) {
+  .circle-container {
+    gap: 50px;
+    /* 화면이 1600px보다 작아지면 원 사이 간격을 50px로 줄입니다. 위 gap 값을 조절하세요 */
+  }
+}
+
+@media (max-width: 1200px) {
+  /* Header & Hero */
+  header {
+    flex-direction: column;
+    gap: 15px;
+  }
+  .menu {
+    gap: 10vw;
+    justify-content: center;
+    flex-wrap: wrap;
+    /* 창 크기에 따라 간격이 변하게 하려면 vw 단위를 사용하세요. 위 값을 조절하면 간격 비율이 바뀝니다 */
+  }
+  .hero {
+    padding-top: 150px;
+    /* 메인 타이틀의 위치를 조절하려면 위 padding-top 값을 변경하세요 */
+  }
+  /* Circle Container */
+  .circle-container {
+    grid-template-columns: repeat(2, 1fr);
+    max-width: 600px;
+    /* 화면이 1200px보다 작아지면 2줄로 바뀝니다. 위 max-width 값을 조절하세요 */
+  }
+}
+
+@media (max-width: 1000px) {
+  .card-container {
+    grid-template-columns: repeat(2, 1fr);
+    /* 화면이 1000px보다 작아지면 2줄로 바뀝니다. 위 max-width 값을 조절하세요 */
+  }
+}
+
+@media (max-width: 600px) {
+  .circle-container,
+  .card-container {
+    grid-template-columns: 1fr;
+    /* 화면이 600px보다 작아지면 1줄로 바뀝니다 */
+  }
+}

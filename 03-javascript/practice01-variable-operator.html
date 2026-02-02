@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>변수 & 연산자 연습문제</title>
+  </head>
+  <body>
+    <!-- 
+      변수 명명 규칙
+      1) 문자, 숫자, 기호는 $, _만 사용
+      2) 첫글자에는 숫자 금지
+      3) 예약어(const, if, switch...) 금지
+      4) 표기법대로 사용 - camelCase(낙타표기법) 
+      5) 상수(const로 표시한 것 X)는 대문자 + SNAKE_CASE(언더바 표기법)
+    -->
+    <h1>변수 & 연산자 연습문제</h1>
+    <ol style="line-height: 2">
+      <li>
+        킬로그램(kg)을 파운드(lb)로 환산하여 console에 출력하시오. (1kg = 2.2lb)
+        <script>
+          const kg = 1;
+          const lb = kg * 2.21;
+          console.log(lb);
+        </script>
+      </li>
+
+      <li>
+        제곱미터(㎡)를 평(평수)으로 환산하여 출력하시오. (1㎡ = 0.3평)
+        <script>
+          const m = 1;
+          const 평 = m * 0.3;
+          console.log(평);
+        </script>
+      </li>
+
+      <li>
+        사다리꼴의 넓이를 구하시오. (윗변 + 밑변) / 2 * 높이
+        <script>
+          const 윗변 = 10;
+          const 밑변 = 20;
+          const 높이 = 5;
+          const 넓이 = ((윗변 + 밑변) / 2) * 높이;
+          console.log(넓이);
+        </script>
+      </li>
+
+      <li>
+        예금 12,000,000원을 연이율 4%로 정기예금했을 때 월 이자를 구하시오.
+        <script>
+          const 예금 = 12000000;
+          const 연이율 = 0.04;
+          const 월이자 = 예금 * 연이율;
+          console.log(월이자);
+        </script>
+      </li>
+
+      <li>
+        아이스 아메리카노 한 잔 5,500원, 가진 돈이 15,000원일 때 최대 몇 잔,
+        잔돈은 얼마?
+        <script>
+          const 아메리카노 = 5500;
+          const 돈 = 15000;
+          const 잔 = 돈 / 아메리카노;
+          const 잔돈 = 돈 % 아메리카노;
+          console.log(parseInt(잔));
+          console.log(잔돈);
+        </script>
+      </li>
+
+      <li>
+        양꼬치 1인분 12,000원, 음료수 2,000원. 양꼬치 64인분, 음료 6개.
+        10인분마다 음료 1개 서비스. 총 지불 금액?
+        <script>
+          const 양꼬치 = 12000;
+          const 음료 = 2000;
+          console.log(양꼬치 * 64 + 음료 * 6 - 음료 * 6);
+        </script>
+      </li>
+
+      <li>
+        두 자리 정수(예: 73)의 각 자릿수를 더한 값을 구하시오. (7 + 3 = 10)
+        <script>
+          const num = 73;
+          const a = Math.floor(num / 10);
+          const b = num % 10;
+          console.log(a + b);
+        </script>
+      </li>
+
+      <li>
+        이름, 나이, 취미를 변수로 저장한 후 소개 문장을 console에 출력하시오.
+        <script>
+          const name = "김도연";
+          const age = 25;
+          const hobby = "게임";
+          console.log(
+            "안녕하세요 저는" +
+              name +
+              "이고 나이는" +
+              age +
+              "이며 취미는" +
+              hobby +
+              "입니다.",
+          );
+        </script>
+      </li>
+
+      <li>
+        문자열 "100"과 숫자 100의 비교 결과를 `==`와 `===`로 비교하고 결과를
+        console에 출력하시오.
+        <script>
+          const c = "100";
+          const d = 100;
+          console.log(c == d);
+          console.log(c === d);
+        </script>
+      </li>
+    </ol>
+  </body>
+</html>
