@@ -20,8 +20,8 @@
         킬로그램(kg)을 파운드(lb)로 환산하여 console에 출력하시오. (1kg = 2.2lb)
         <script>
           const kg = 1;
-          const lb = kg * 2.21;
-          console.log(lb);
+          const lb = kg * 2.2;
+          console.log(kg * lb);
         </script>
       </li>
 
@@ -59,12 +59,12 @@
         아이스 아메리카노 한 잔 5,500원, 가진 돈이 15,000원일 때 최대 몇 잔,
         잔돈은 얼마?
         <script>
-          const 아메리카노 = 5500;
-          const 돈 = 15000;
-          const 잔 = 돈 / 아메리카노;
-          const 잔돈 = 돈 % 아메리카노;
-          console.log(parseInt(잔));
-          console.log(잔돈);
+          const coffee = 5500;
+          const money = 15000;
+          const glass = money / coffee;
+          const cost = money % coffee;
+          console.log(parseInt(glass));
+          console.log(cost);
         </script>
       </li>
 
@@ -74,7 +74,7 @@
         <script>
           const 양꼬치 = 12000;
           const 음료 = 2000;
-          console.log(양꼬치 * 64 + 음료 * 6 - 음료 * 6);
+          console.log(양꼬치 * 64 + 음료 * 6 - 음료 * parseInt(64 / 10));
         </script>
       </li>
 
@@ -82,7 +82,7 @@
         두 자리 정수(예: 73)의 각 자릿수를 더한 값을 구하시오. (7 + 3 = 10)
         <script>
           const num = 73;
-          const a = Math.floor(num / 10);
+          const a = parseInt(num / 10);
           const b = num % 10;
           console.log(a + b);
         </script>
