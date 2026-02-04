@@ -1,10 +1,12 @@
 let answer = Math.floor(Math.random() * 100) + 1;
+console.log("정답:", answer); // 개발자 도구 콘솔에서 정답을 미리 보기
 
 let count = 0;
 
 function play() {
   while (true) {
     let input = prompt("1부터 100 사이의 숫자를 입력해보세요!");
+    console.log("사용자가 입력한 값:", input); // 입력할 때마다 콘솔 기록
 
     // 무한반복 -> 종료하는 시점 (break)
     // 취소 버튼을 눌렀을 때 input이 null한테 이때 종료
@@ -31,7 +33,7 @@ function play() {
     } else if (myNumber > answer) {
       alert("해당 숫자보다 작습니다.");
     } else {
-      alert("해당 숫자보다큽니다.");
+      alert("해당 숫자보다 큽니다.");
     }
   }
 }
