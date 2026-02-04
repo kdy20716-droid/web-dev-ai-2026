@@ -17,6 +17,8 @@ function gameStart() {
       alert("숫자만 입력해주세요!");
       continue;
     }
+    // 해당 숫자를 입력하지 않았을 시 (문자를 입력했다거나, 비어있는 걸 보냈다거나)
+    // 숫자인데 1~100까지 숫자가 아닌 경우 - 잘못 작성한 경우 (continue)
 
     let myNumber = Number(input);
     // 끝나는 시점! 내가 입력한 input 값이 랜덤 값을 맞춤
