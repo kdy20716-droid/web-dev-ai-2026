@@ -10,17 +10,21 @@ const Game = {
     return prompt("1부터 100까지의 숫자를 입력하세요.");
   },
 
+  // 취소 버튼을 눌렀을 때 input이  null인데 이때 종료
   judge: function (input) {
     if (input === null) {
       return "CANCEL";
     }
 
+    // 유효성 검사
     if (input.trim() === "" || isNaN(input)) {
       return "INVALID";
     }
 
+    // 유저가 입력한 숫자
     const userNum = Number(input);
 
+    // 범위 검사
     if (userNum === this.targetNumber) {
       return "CORRECT";
     } else if (userNum > this.targetNumber) {
@@ -30,6 +34,7 @@ const Game = {
     }
   },
 
+  // 메시지 출력
   showMessage: function (status) {
     switch (status) {
       case "INVALID":
@@ -50,6 +55,7 @@ const Game = {
     }
   },
 
+  // 게임 시작
   play: function () {
     this.targetNumber = this.getTarget();
     this.tryCount = 0;
