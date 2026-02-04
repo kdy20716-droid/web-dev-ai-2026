@@ -2,7 +2,7 @@ let answer = Math.floor(Math.random() * 100) + 1;
 
 let count = 0;
 
-function gameStart() {
+function play() {
   while (true) {
     let input = prompt("1부터 100 사이의 숫자를 입력해보세요!");
 
@@ -23,7 +23,7 @@ function gameStart() {
     let myNumber = Number(input);
     // 끝나는 시점! 내가 입력한 input 값이 랜덤 값을 맞춤
 
-    count = count + 1;
+    count = count + 1; // 횟수 증가하는 코드 위치 (count++;)도 가능
 
     if (myNumber === answer) {
       alert("정답입니다! " + count + "번 만에 맞췄어요!");
@@ -36,4 +36,4 @@ function gameStart() {
   }
 }
 
-gameStart();
+play();
