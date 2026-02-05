@@ -31,7 +31,8 @@
       <li>
         1부터 사용자에게 입력받은 숫자까지의 합을 출력하시오. (prompt 사용)
         <script>
-          const input = prompt("숫자를 입력하세요.");
+          //const input = prompt("숫자를 입력하세요.");
+          const input = 10;
           const num = Number(input);
           let sum = 0;
           for (let i = 1; i <= num; i++) {
@@ -61,6 +62,23 @@
               console.log(numbers[i]);
             }
           }
+          for (value of numbers) {
+            if (value % 2 === 0) {
+              console.log(value);
+            }
+          }
+          numbers.forEach((value) => {
+            if (value % 2 === 0) {
+              console.log(value);
+            }
+          });
+          numbers.filter((value) => {
+            if (value % 2 === 0) {
+              console.log(value);
+            }
+          });
+          const evens = numbers.filter((value) => value % 2 === 0);
+          console.log(evens);
         </script>
       </li>
 
@@ -73,6 +91,8 @@
               console.log(words[i]);
             }
           }
+          const filter = words.filter((value) => value.length >= 3);
+          console.log(filter);
         </script>
       </li>
 
@@ -86,6 +106,12 @@
               max = nums[i];
             }
           }
+          console.log(max);
+
+          nums.sort((a, b) => b - a);
+          console.log(nums[0]);
+
+          max = Math.max(...nums);
           console.log(max);
         </script>
       </li>
@@ -101,6 +127,14 @@
             console.log(i);
             if (i === 7) {
               break;
+            }
+          }
+          for (let i = 1; i <= 10; i++) {
+            if (i % 2 != 0) {
+              console.log(i);
+              if (i === 7) {
+                break;
+              }
             }
           }
         </script>
