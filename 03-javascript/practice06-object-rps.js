@@ -1,4 +1,4 @@
-// 1. 기본 구현 (practice05 참고하여 제작 + 승패 관련은 모든 경우의수 전부 적었다가 ai을 보고 수정)
+// 1. 기본 구현 (practice05 참고하여 제작 + 승패 관련은 ai을 보고 수정)
 // 랜덤으로 가위,바위,보 고름
 const games = ["가위", "바위", "보"];
 const random = Math.floor(Math.random() * games.length);
@@ -42,7 +42,7 @@ function play() {
 
 play();
 
-// 2. 객체 구현 방식 (ai보면서 만들기)
+// 2. 객체 구현 방식 (ai보면서 만들기, 06-object.js도 참고)
 const computer = {
   choice: "",
 
