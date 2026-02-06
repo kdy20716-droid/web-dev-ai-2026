@@ -17,7 +17,7 @@ while (true) {
 }
 console.log(`로또 번호: ${lotto} / 보너스 번호: ${bonus}`);
 
-// 내가 입력한 번호도 6개 숫자 랜덤으로 맞출 때까지
+// 내가 입력한 번호도 6개 숫자
 const myLotto = [];
 while (myLotto.length < 6) {
   const num = Math.floor(Math.random() * 45) + 1;
