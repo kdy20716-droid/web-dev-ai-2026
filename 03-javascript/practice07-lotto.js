@@ -1,38 +1,34 @@
+// 로또 번호 6개 추출
 const lotto = [];
-while (true) {
+while (lotto.length < 6) {
   const num = Math.floor(Math.random() * 45) + 1;
   if (!lotto.includes(num)) {
     lotto.push(num);
   }
-  if (lotto.length === 6) {
-    break;
-  }
 }
-const bonus = [];
+// 보너스 번호 1개 추출 (로또 번호와 겹치지 않게)
+let bonus;
 while (true) {
   const num = Math.floor(Math.random() * 45) + 1;
-  if (!bonus.includes(num)) {
-    bonus.push(num);
-  }
-  if (bonus.length === 1) {
+  if (!lotto.includes(num)) {
+    bonus = num;
     break;
   }
 }
-// 로또 번호
-console.log("로또번호", lotto, bonus);
+console.log(
+  `로또 번호: ${lotto.sort((a, b) => a - b)} / 보너스 번호: ${bonus}`,
+);
 
 // 내가 입력한 번호도 6개 숫자 랜덤으로 맞출 때까지
 const myLotto = [];
-while (true) {
+while (myLotto.length < 6) {
   const num = Math.floor(Math.random() * 45) + 1;
   if (!myLotto.includes(num)) {
     myLotto.push(num);
   }
-  if (myLotto.length === 6) {
-    break;
-  }
 }
 console.log(myLotto);
+
 // 1등 당첨 : 6개 일치
 const count = lotto.filter((num) => myLotto.includes(num)).length;
 if (count === 6) {
