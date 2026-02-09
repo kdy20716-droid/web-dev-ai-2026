@@ -12,6 +12,7 @@ body {
 #date {
   font-size: 1.5rem;
   margin-bottom: 0px;
+  font-weight: bold;
 }
 #time {
   font-size: 3rem;
@@ -20,7 +21,6 @@ body {
 #remaining {
   margin-top: 10px;
   font-size: 1.2rem;
-  color: #555;
 }
 #quote {
   padding: 10px;
@@ -33,5 +33,4 @@ body {
 }
 #quote .ko {
   font-size: 0.9rem;
-  color: #555;
 }
