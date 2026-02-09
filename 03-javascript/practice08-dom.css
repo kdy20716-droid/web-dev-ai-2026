@@ -1,0 +1,37 @@
+body {
+  display: flex;
+  justify-content: center;
+  padding-top: 300px;
+  margin: 0;
+  height: 100vh;
+  font-family: sans-serif;
+}
+#clock-container {
+  text-align: center;
+}
+#date {
+  font-size: 1.5rem;
+  margin-bottom: 10px;
+}
+#time {
+  font-size: 3rem;
+  font-weight: bold;
+}
+#remaining {
+  margin-top: 20px;
+  font-size: 1.2rem;
+  color: #555;
+}
+#quote {
+  padding: 10px;
+  border-radius: 10px;
+}
+#quote .en {
+  font-size: 1.1rem;
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+#quote .ko {
+  font-size: 0.9rem;
+  color: #555;
+}
