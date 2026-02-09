@@ -22,11 +22,11 @@ const remainingElement = document.querySelector("#remaining");
 const quoteElement = document.querySelector("#quote");
 
 const now = new Date();
-// 숫자를 두 자리로 만들 때 사용
 const minute = String(now.getMinutes()).padStart(2, "0");
 function updateClock() {
   const now = new Date();
 
+  //요일 배열
   const year = now.getFullYear();
   const month = now.getMonth() + 1;
   const date = now.getDate();
@@ -42,12 +42,12 @@ function updateClock() {
 
   // 올해 남은 시간 계산
   const endOfYear = new Date(year, 11, 31, 23, 59, 59);
-  const diff = endOfYear - now;
+  const dif = endOfYear - now;
 
-  const rDays = Math.floor(diff / (1000 * 60 * 60 * 24));
-  const rHours = Math.floor((diff / (1000 * 60 * 60)) % 24);
-  const rMinutes = Math.floor((diff / (1000 * 60)) % 60);
-  const rSeconds = Math.floor((diff / 1000) % 60);
+  const rDays = Math.floor(dif / (1000 * 60 * 60 * 24));
+  const rHours = Math.floor((dif / (1000 * 60 * 60)) % 24);
+  const rMinutes = Math.floor((dif / (1000 * 60)) % 60);
+  const rSeconds = Math.floor((dif / 1000) % 60);
 
   remainingElement.textContent = `올해 남은 시간: ${rDays}일 ${rHours}시간 ${rMinutes}분 ${rSeconds}초`;
 }
