@@ -16,6 +16,7 @@ const quotes = [
     ko: "그저 남들과 똑같이 살면서 차이를 만들어낸 사람은 없다.",
   },
 ];
+
 const dateElement = document.querySelector("#date");
 const timeElement = document.querySelector("#time");
 const remainingElement = document.querySelector("#remaining");
@@ -65,6 +66,22 @@ function updateQuote() {
   currentQuoteIndex = randomIndex;
   const randomQuote = quotes[randomIndex];
   quoteElement.innerHTML = `<div class="en">${randomQuote.en}</div><div class="ko">${randomQuote.ko}</div>`;
+
+  const randomColor =
+    pastelColors[Math.floor(Math.random() * pastelColors.length)];
+  document.body.style.backgroundColor = randomColor;
 }
+const pastelColors = [
+  "#FFB3BA", // 파스텔 레드
+  "#FFDFBA", // 파스텔 오렌지
+  "#FFFFBA", // 파스텔 옐로우
+  "#BAFFC9", // 파스텔 그린
+  "#BAE1FF", // 파스텔 블루
+  "#E6E6FA", // 라벤더
+  "#FFC0CB", // 핑크
+  "#D8BFD8", // 연보라
+  "#B0E0E6", // 파우더 블루
+  "#F0E68C", // 카키
+];
 updateQuote();
 setInterval(updateQuote, 3000);
