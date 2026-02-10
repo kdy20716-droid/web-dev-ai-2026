@@ -6,6 +6,7 @@ const img3 = document.querySelector("#img3");
 const clickBtn = document.querySelector("#clickBtn");
 const restartBtn = document.querySelector("#restartBtn");
 const result = document.querySelector("#result");
+const fail = document.querySelector("#fail");
 
 // 이미지 배열
 const images = [
@@ -38,6 +39,7 @@ clickBtn.addEventListener("click", () => {
     clickBtn.disabled = true; // 버튼 비활성화
     result.style.display = "block"; // 결과 메시지 보이기
     result.textContent = `축하합니다! ${count}번 만에 성공하셨습니다! 다시 시작하려면 재시작 버튼을 눌러주세요`;
+    fail.style.display = "none"; // 실패 메시지 숨기기
 
     // 폭죽 효과 생성
     const firework = document.createElement("div");
@@ -47,21 +49,15 @@ clickBtn.addEventListener("click", () => {
     // 1.5초 뒤에 폭죽 요소 제거
     setTimeout(() => {
       document.body.removeChild(firework);
-    }, 1500);
+    }, 3000);
   } else {
     console.log("실패");
+    fail.style.display = "block"; // 실패 메시지 보이기
+    fail.textContent = `안탑깝게도 ${count}번 만에 맞추는데 실패했습니다! click 버튼을 다시 눌러주세요!`;
   }
 });
 
 // 재시작 버튼 이벤트
 restartBtn.addEventListener("click", () => {
-  count = 0;
-  clickBtn.textContent = "Click";
-  clickBtn.disabled = false; // 버튼 활성화
-  result.style.display = "none"; // 결과 메시지 숨기기
-
-  // 이미지 초기화
-  img1.src = images[0];
-  img2.src = images[1];
-  img3.src = images[2];
+  location.reload();
 });
