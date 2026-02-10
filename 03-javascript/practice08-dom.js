@@ -68,21 +68,10 @@ function updateQuote() {
   quoteElement.innerHTML = `<div class="en">${randomQuote.en}</div><div class="ko">${randomQuote.ko}</div>`;
 
   // 랜덤으로 색깔 출력
-  const randomColor =
-    pastelColors[Math.floor(Math.random() * pastelColors.length)];
-  document.body.style.backgroundColor = randomColor;
+  const r = Math.floor(Math.random() * 256);
+  const g = Math.floor(Math.random() * 256);
+  const b = Math.floor(Math.random() * 256);
+  document.body.style.backgroundColor = `rgba(${r},${g},${b},0.2)`;
 }
-const pastelColors = [
-  "#FFB3BA",
-  "#FFDFBA",
-  "#FFFFBA",
-  "#BAFFC9",
-  "#BAE1FF",
-  "#E6E6FA",
-  "#FFC0CB",
-  "#D8BFD8",
-  "#B0E0E6",
-  "#F0E68C",
-];
 updateQuote();
 setInterval(updateQuote, 3000);
