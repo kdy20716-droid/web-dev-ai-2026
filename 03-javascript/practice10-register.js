@@ -5,6 +5,7 @@ const pwCheck = document.querySelector("#pwCheck");
 const name = document.querySelector("#name");
 const email = document.querySelector("#email");
 const phone = document.querySelector("#phone");
+const submitBtn = document.querySelector("#submitBtn");
 
 // 각 필드의 유효성 상태를 저장하는 객체
 const checkStatus = {
@@ -16,17 +17,27 @@ const checkStatus = {
   phone: false,
 };
 
+// 버튼 활성화/비활성화 업데이트 함수
+function updateButtonState() {
+  const isAllValid = Object.values(checkStatus).every(
+    (status) => status === true,
+  );
+  submitBtn.disabled = !isAllValid;
+}
+
 // 유효성 검사 함수 (입력요소, 정규식, 메시지요소, 키값)
 function validate(input, regex, msgElement, key) {
   if (regex.test(input.value)) {
     msgElement.textContent = "확인되었습니다";
     msgElement.style.color = "green";
     checkStatus[key] = true;
+    updateButtonState();
     return true;
   } else {
     msgElement.textContent = "제대로 작성해 주세요";
     msgElement.style.color = "red";
     checkStatus[key] = false;
+    updateButtonState();
     return false;
   }
 }
@@ -63,6 +74,7 @@ function checkPwMatch() {
     msg.style.color = "red";
     checkStatus.pwCheck = false;
   }
+  updateButtonState();
 }
 pwCheck.addEventListener("input", checkPwMatch);
 
@@ -81,7 +93,7 @@ email.addEventListener("input", () => {
 
 // 6. 전화번호: 010-0000-0000 형식
 phone.addEventListener("input", () => {
-  const regex = /^010-\d{4}-\d{4}$/;
+  const regex = /^010-?\d{4}-?\d{4}$/;
   validate(phone, regex, document.querySelector("#phoneMsg"), "phone");
 });
 
@@ -115,3 +127,6 @@ form.addEventListener("submit", (e) => {
 document.querySelector("#cancelBtn").addEventListener("click", () => {
   location.reload();
 });
+
+// 초기화 시 버튼 비활성화
+submitBtn.disabled = true;
