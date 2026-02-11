@@ -1,14 +1,3 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
-import {
-  getFirestore,
-  collection,
-  addDoc,
-  getDocs,
-  query,
-  orderBy,
-  limit,
-} from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
-
 const { Engine, Render, Runner, World, Bodies, Body, Events } = Matter;
 
 // 1. 엔진 및 렌더러 초기화
@@ -90,44 +79,94 @@ const evolutionList = document.getElementById("evolution-list");
 const startScreen = document.getElementById("start-screen");
 const startBtn = document.getElementById("start-btn");
 const themeBtn = document.getElementById("theme-btn");
+const recentLabel = document.querySelector(".recent-scores-box .label");
+
+// 📢 Firebase 설정 (Firebase 콘솔에서 프로젝트 생성 후 발급받은 실제 값으로 변경해야 랭킹이 공유됩니다!)
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT_ID.appspot.com",
+  messagingSenderId: "SENDER_ID",
+  appId: "APP_ID",
+};
+
+let db;
+try {
+  if (firebaseConfig.apiKey !== "YOUR_API_KEY") {
+    firebase.initializeApp(firebaseConfig);
+    db = firebase.firestore();
+    console.log("파이어베이스 연결 성공!");
+  } else {
+    console.warn(
+      "파이어베이스 설정이 완료되지 않았습니다. 로컬 모드로 동작합니다.",
+    );
+  }
+} catch (error) {
+  console.error("Firebase 초기화 실패:", error);
+}
 
 // 콤보 시스템 변수
 let comboCount = 0;
 let comboTimer = null;
 
 // 기록 불러오기 함수
-function loadRecords() {
+async function loadRecords() {
   const highScore = localStorage.getItem("suika-high-score") || 0;
   highScoreElement.textContent = highScore;
+  recentScoresElement.innerHTML =
+    "<li style='text-align:center;'>불러오는 중...</li>";
 
-  const recentScores = JSON.parse(
-    localStorage.getItem("suika-recent-scores") || "[]",
-  );
+  let recentScores = [];
+
+  if (db) {
+    // Firebase가 연결된 경우 서버에서 데이터 가져오기
+    recentLabel.textContent = "명예의 전당 🏆";
+    try {
+      const querySnapshot = await db
+        .collection("scores")
+        .orderBy("score", "desc")
+        .limit(10)
+        .get();
+      querySnapshot.forEach((doc) => {
+        recentScores.push(doc.data());
+      });
+    } catch (error) {
+      console.error("데이터 로드 실패:", error);
+    }
+  }
+
+  // 데이터가 없으면(오류 또는 초기 상태) 로컬 데이터 표시 (선택 사항)
+  if (recentScores.length === 0) {
+    if (!db) recentLabel.textContent = "최근 기록 (로컬)";
+    recentScores = JSON.parse(
+      localStorage.getItem("suika-recent-scores") || "[]",
+    );
+  }
+
   recentScoresElement.innerHTML = recentScores
-    .map((entry) => {
+    .map((entry, index) => {
       if (typeof entry === "object") {
-        return `<li>${entry.name}: ${entry.score}</li>`;
+        return `
+          <li>
+            <div><span class="rank">${index + 1}</span> ${entry.name}</div>
+            <div>${entry.score}점</div>
+            <div class="date-info">${entry.date || ""}</div>
+          </li>`;
       }
-      return `<li>익명: ${entry}</li>`;
+      return `<li>익명: ${entry}</li>`; // 구버전 데이터 호환
     })
     .join("");
 }
 loadRecords();
 
 // 진화 가이드 생성
-FRUITS.forEach((fruit, index) => {
+FRUITS.forEach((fruit) => {
   const li = document.createElement("li");
 
-  const icon = document.createElement("canvas");
+  const icon = document.createElement("div");
   icon.className = "fruit-icon";
-  icon.width = 32;
-  icon.height = 32;
-
-  const ctx = icon.getContext("2d");
-  const radius = 14;
-  ctx.translate(16, 16);
-  drawFruitDecoration(ctx, radius, fruit, fruit.face);
-  ctx.translate(-16, -16);
+  icon.style.backgroundColor = fruit.color;
 
   const name = document.createElement("span");
   name.textContent = fruit.name;
@@ -135,13 +174,6 @@ FRUITS.forEach((fruit, index) => {
   li.appendChild(icon);
   li.appendChild(name);
   evolutionList.appendChild(li);
-
-  if (index < FRUITS.length - 1) {
-    const arrow = document.createElement("li");
-    arrow.className = "evolution-arrow";
-    arrow.textContent = "▼";
-    evolutionList.appendChild(arrow);
-  }
 });
 
 // 과일 생성 함수
@@ -167,18 +199,8 @@ function setNextFruit() {
 
   // UI 업데이트
   const nextFruitData = FRUITS[nextFruitIndex];
-  const ctx = nextFruitElement.getContext("2d");
-  const width = nextFruitElement.width;
-  const height = nextFruitElement.height;
-
-  ctx.clearRect(0, 0, width, height);
-  const radius = width / 2 - 2; // 캔버스 크기에 맞춰 꽉 차게 그림 (고정 크기)
-  const centerX = width / 2;
-  const centerY = height / 2;
-
-  ctx.translate(centerX, centerY);
-  drawFruitDecoration(ctx, radius, nextFruitData, nextFruitData.face);
-  ctx.translate(-centerX, -centerY);
+  nextFruitElement.style.backgroundColor = nextFruitData.color;
+  nextFruitElement.style.backgroundImage = "none";
 }
 
 // 대기 중인 과일 생성 (상단)
@@ -378,7 +400,335 @@ Events.on(render, "afterRender", () => {
       ctx.translate(x, y);
       ctx.rotate(body.angle);
 
-      drawFruitDecoration(ctx, radius, fruitData, face);
+      // 0. 과일 특징 그리기 (줄기, 잎, 무늬 등)
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+
+      if (name === "체리") {
+        // 줄기
+        ctx.beginPath();
+        ctx.moveTo(0, -radius * 0.8);
+        ctx.quadraticCurveTo(
+          radius * 0.2,
+          -radius * 1.5,
+          radius * 0.8,
+          -radius * 2,
+        );
+        ctx.strokeStyle = "#6d4c41";
+        ctx.lineWidth = 3;
+        ctx.stroke();
+      } else if (name === "딸기") {
+        // 씨앗
+        ctx.fillStyle = "rgba(255, 235, 59, 0.6)";
+        [
+          [-0.4, 0.2],
+          [0.4, 0.2],
+          [0, 0.6],
+          [-0.3, -0.2],
+          [0.3, -0.2],
+        ].forEach((pos) => {
+          ctx.beginPath();
+          ctx.arc(
+            radius * pos[0],
+            radius * pos[1],
+            radius * 0.08,
+            0,
+            Math.PI * 2,
+          );
+          ctx.fill();
+        });
+      } else if (name === "한라봉") {
+        // 꼭지 (볼록한 부분)
+        ctx.beginPath();
+        ctx.arc(0, -radius * 0.9, radius * 0.35, Math.PI, 0);
+        ctx.fillStyle = fruitData.color;
+        ctx.fill();
+        // 잎
+        ctx.beginPath();
+        ctx.ellipse(
+          radius * 0.2,
+          -radius * 1.1,
+          radius * 0.2,
+          radius * 0.1,
+          -Math.PI / 4,
+          0,
+          Math.PI * 2,
+        );
+        ctx.fillStyle = "#4CAF50";
+        ctx.fill();
+      } else if (name === "사과" || name === "오렌지" || name === "복숭아") {
+        // 잎
+        ctx.beginPath();
+        ctx.ellipse(
+          0,
+          -radius * 0.95,
+          radius * 0.2,
+          radius * 0.1,
+          -Math.PI / 4,
+          0,
+          Math.PI * 2,
+        );
+        ctx.fillStyle = "#4CAF50";
+        ctx.fill();
+        // 줄기 (사과만)
+        if (name === "사과") {
+          ctx.beginPath();
+          ctx.moveTo(0, -radius * 0.8);
+          ctx.lineTo(0, -radius * 1.1);
+          ctx.strokeStyle = "#6d4c41";
+          ctx.lineWidth = 3;
+          ctx.stroke();
+        }
+      } else if (name === "배") {
+        // 줄기
+        ctx.beginPath();
+        ctx.moveTo(0, -radius * 0.9);
+        ctx.lineTo(radius * 0.1, -radius * 1.2);
+        ctx.strokeStyle = "#6d4c41";
+        ctx.lineWidth = 3;
+        ctx.stroke();
+      } else if (name === "파인애플") {
+        // 뾰족한 잎
+        ctx.fillStyle = "#4CAF50";
+        ctx.beginPath();
+        ctx.moveTo(0, -radius * 0.9);
+        ctx.lineTo(-radius * 0.3, -radius * 1.4);
+        ctx.lineTo(radius * 0.3, -radius * 1.4);
+        ctx.fill();
+      } else if (name === "멜론") {
+        // 그물 무늬
+        ctx.strokeStyle = "rgba(255,255,255,0.3)";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(-radius * 0.5, -radius * 0.5);
+        ctx.lineTo(radius * 0.5, -radius * 0.5);
+        ctx.moveTo(-radius * 0.5, radius * 0.5);
+        ctx.lineTo(radius * 0.5, radius * 0.5);
+        ctx.moveTo(0, -radius * 0.8);
+        ctx.lineTo(0, radius * 0.8);
+        ctx.stroke();
+        // T자 줄기
+        ctx.strokeStyle = "#6d4c41";
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(0, -radius);
+        ctx.lineTo(0, -radius * 1.2);
+        ctx.moveTo(-radius * 0.15, -radius * 1.2);
+        ctx.lineTo(radius * 0.15, -radius * 1.2);
+        ctx.stroke();
+      } else if (name === "수박") {
+        // 줄무늬
+        ctx.strokeStyle = "#1b5e20"; // 진한 초록
+        ctx.lineWidth = radius * 0.1;
+        ctx.beginPath();
+        for (let i = -0.6; i <= 0.6; i += 0.4) {
+          ctx.moveTo(radius * i, -radius * 0.8);
+          ctx.bezierCurveTo(
+            radius * (i - 0.3),
+            -radius * 0.2,
+            radius * (i + 0.3),
+            radius * 0.2,
+            radius * i,
+            radius * 0.8,
+          );
+        }
+        ctx.stroke();
+      }
+
+      // 1. 볼터치 (귀여움 포인트)
+      ctx.fillStyle = "rgba(255, 100, 100, 0.4)"; // 연한 분홍색
+      const blushX = radius * 0.45;
+      const blushY = radius * 0.1;
+      const blushSize = radius * 0.18; // 볼터치 크기 증가
+
+      ctx.beginPath();
+      ctx.arc(-blushX, blushY, blushSize, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(blushX, blushY, blushSize, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 2. 눈과 입 스타일 설정
+      ctx.fillStyle = "#444"; // 진한 회색 (더 선명하게)
+      ctx.strokeStyle = "#444";
+      ctx.lineWidth = Math.max(2, radius * 0.08); // 크기에 비례한 두께
+      ctx.lineCap = "round";
+
+      const eyeX = radius * 0.3;
+      const eyeY = -radius * 0.15;
+      const eyeSize = radius * 0.13;
+
+      // 눈 그리기 헬퍼 (반짝이는 하이라이트 포함)
+      const drawCuteEye = (ex, ey, es) => {
+        ctx.beginPath();
+        ctx.arc(ex, ey, es, 0, Math.PI * 2);
+        ctx.fillStyle = "#444";
+        ctx.fill();
+        // 하이라이트 (흰색 점)
+        ctx.beginPath();
+        ctx.arc(ex - es * 0.3, ey - es * 0.3, es * 0.4, 0, Math.PI * 2);
+        ctx.fillStyle = "white";
+        ctx.fill();
+      };
+
+      if (face === "smile") {
+        // 기본 스마일
+        drawCuteEye(-eyeX, eyeY, eyeSize);
+        drawCuteEye(eyeX, eyeY, eyeSize);
+        ctx.beginPath();
+        ctx.arc(0, 0, radius * 0.3, 0.2 * Math.PI, 0.8 * Math.PI);
+        ctx.stroke();
+      } else if (face === "wink") {
+        // 윙크
+        drawCuteEye(-eyeX, eyeY, eyeSize);
+        // 윙크하는 눈 (> 모양)
+        ctx.beginPath();
+        ctx.moveTo(eyeX - eyeSize, eyeY);
+        ctx.quadraticCurveTo(eyeX, eyeY - eyeSize, eyeX + eyeSize, eyeY);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(0, 0, radius * 0.3, 0.2 * Math.PI, 0.8 * Math.PI);
+        ctx.stroke();
+      } else if (face === "surprised") {
+        // 놀람 (O 입)
+        // 눈 (작은 점)
+        ctx.beginPath();
+        ctx.arc(-eyeX, eyeY, eyeSize * 0.8, 0, Math.PI * 2);
+        ctx.fillStyle = "#444";
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(eyeX, eyeY, eyeSize * 0.8, 0, Math.PI * 2);
+        ctx.fill();
+        // 입 (동그란 O)
+        ctx.beginPath();
+        ctx.ellipse(
+          0,
+          radius * 0.2,
+          radius * 0.1,
+          radius * 0.15,
+          0,
+          0,
+          Math.PI * 2,
+        );
+        ctx.stroke();
+      } else if (face === "sleepy") {
+        // 졸림 (- - 눈)
+        ctx.beginPath();
+        ctx.moveTo(-eyeX - eyeSize, eyeY);
+        ctx.lineTo(-eyeX + eyeSize, eyeY);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(eyeX - eyeSize, eyeY);
+        ctx.lineTo(eyeX + eyeSize, eyeY);
+        ctx.stroke();
+        // 입 (작은 o)
+        ctx.beginPath();
+        ctx.arc(0, 0, radius * 0.2, 0.2 * Math.PI, 0.8 * Math.PI);
+        ctx.stroke();
+      } else if (face === "neutral") {
+        // 무표정 (- 입)
+        drawCuteEye(-eyeX, eyeY, eyeSize);
+        drawCuteEye(eyeX, eyeY, eyeSize);
+        ctx.beginPath();
+        ctx.moveTo(-radius * 0.2, radius * 0.2);
+        ctx.lineTo(radius * 0.2, radius * 0.2);
+        ctx.stroke();
+      } else if (face === "laugh") {
+        // 웃음 (> < 눈)
+        ctx.beginPath();
+        ctx.moveTo(-eyeX - eyeSize, eyeY - eyeSize / 2);
+        ctx.lineTo(-eyeX, eyeY + eyeSize / 2);
+        ctx.lineTo(-eyeX + eyeSize, eyeY - eyeSize / 2);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(eyeX - eyeSize, eyeY - eyeSize / 2);
+        ctx.lineTo(eyeX, eyeY + eyeSize / 2);
+        ctx.lineTo(eyeX + eyeSize, eyeY - eyeSize / 2);
+        ctx.stroke();
+        // 입 (반달 채움)
+        ctx.beginPath();
+        ctx.arc(0, radius * 0.1, radius * 0.25, 0, Math.PI, false);
+        ctx.fillStyle = "#444";
+        ctx.fill();
+      } else if (face === "worried") {
+        // 걱정 (ㅅ 입)
+        drawCuteEye(-eyeX, eyeY, eyeSize);
+        drawCuteEye(eyeX, eyeY, eyeSize);
+        // 눈썹
+        ctx.beginPath();
+        ctx.moveTo(-eyeX - eyeSize, eyeY - eyeSize * 1.5);
+        ctx.lineTo(-eyeX + eyeSize / 2, eyeY - eyeSize * 2);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(eyeX + eyeSize, eyeY - eyeSize * 1.5);
+        ctx.lineTo(eyeX - eyeSize / 2, eyeY - eyeSize * 2);
+        ctx.stroke();
+        // 입 (물결)
+        ctx.beginPath();
+        ctx.arc(0, radius * 0.4, radius * 0.2, 1.2 * Math.PI, 1.8 * Math.PI);
+        ctx.stroke();
+      } else if (face === "happy") {
+        // 행복 (^ ^ 눈)
+        ctx.beginPath();
+        ctx.arc(-eyeX, eyeY + eyeSize / 2, eyeSize, Math.PI, 0);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(eyeX, eyeY + eyeSize / 2, eyeSize, Math.PI, 0);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(0, 0, radius * 0.3, 0.2 * Math.PI, 0.8 * Math.PI);
+        ctx.stroke();
+      } else if (face === "confused") {
+        // 혼란 (짝짝이 눈)
+        drawCuteEye(-eyeX, eyeY, eyeSize * 0.8);
+        drawCuteEye(eyeX, eyeY, eyeSize * 1.2);
+        // 입 (지그재그)
+        ctx.beginPath();
+        ctx.moveTo(-radius * 0.1, radius * 0.2);
+        ctx.lineTo(radius * 0.2, radius * 0.1);
+        ctx.stroke();
+      } else if (face === "excited") {
+        // 신남 (X X 눈)
+        ctx.beginPath();
+        ctx.moveTo(-eyeX - eyeSize, eyeY - eyeSize);
+        ctx.lineTo(-eyeX + eyeSize, eyeY + eyeSize);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(-eyeX + eyeSize, eyeY - eyeSize);
+        ctx.lineTo(-eyeX - eyeSize, eyeY + eyeSize);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(eyeX - eyeSize, eyeY - eyeSize);
+        ctx.lineTo(eyeX + eyeSize, eyeY + eyeSize);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(eyeX + eyeSize, eyeY - eyeSize);
+        ctx.lineTo(eyeX - eyeSize, eyeY + eyeSize);
+        ctx.stroke();
+
+        // 입 (D 모양)
+        ctx.beginPath();
+        ctx.arc(0, radius * 0.1, radius * 0.25, 0, Math.PI);
+        ctx.closePath();
+        ctx.fillStyle = "#444";
+        ctx.fill();
+      } else if (face === "big_smile") {
+        // 왕 스마일
+        drawCuteEye(-eyeX, eyeY, eyeSize * 1.2);
+        drawCuteEye(eyeX, eyeY, eyeSize * 1.2);
+        // 입 (큰 D)
+        ctx.beginPath();
+        ctx.arc(0, radius * 0.1, radius * 0.3, 0, Math.PI);
+        ctx.closePath();
+        ctx.fillStyle = "#444";
+        ctx.fill();
+        // 혀
+        ctx.beginPath();
+        ctx.arc(0, radius * 0.3, radius * 0.15, Math.PI, 0);
+        ctx.fillStyle = "#ff6b6b";
+        ctx.fill();
+      }
 
       ctx.rotate(-body.angle);
       ctx.translate(-x, -y);
@@ -537,7 +887,7 @@ function createParticles(x, y, color) {
 }
 
 // 8. 재시작 버튼 이벤트
-restartBtn.addEventListener("click", () => {
+restartBtn.addEventListener("click", async () => {
   // 점수 저장 로직 이동
   const currentScore = score;
   const playerName = document.getElementById("player-name").value || "익명";
@@ -547,13 +897,31 @@ restartBtn.addEventListener("click", () => {
     localStorage.setItem("suika-high-score", currentScore);
   }
 
+  // 날짜 정보 생성
+  const now = new Date();
+  const dateStr = `${now.getMonth() + 1}/${now.getDate()} ${now.getHours()}:${String(now.getMinutes()).padStart(2, "0")}`;
+
+  // Firebase에 저장
+  if (db) {
+    try {
+      await db.collection("scores").add({
+        name: playerName,
+        score: currentScore,
+        date: dateStr,
+      });
+    } catch (error) {
+      console.error("점수 저장 실패:", error);
+      alert("점수 저장에 실패했습니다.");
+    }
+  }
+
+  // 로컬 스토리지에도 백업 (선택 사항)
   const recentScores = JSON.parse(
     localStorage.getItem("suika-recent-scores") || "[]",
   );
-  // 이름과 점수를 객체로 저장
-  recentScores.unshift({ name: playerName, score: currentScore });
-
-  if (recentScores.length > 10) recentScores.pop(); // 10개까지만 유지
+  recentScores.push({ name: playerName, score: currentScore, date: dateStr });
+  recentScores.sort((a, b) => b.score - a.score);
+  if (recentScores.length > 10) recentScores.length = 10;
   localStorage.setItem("suika-recent-scores", JSON.stringify(recentScores));
 
   location.reload();
@@ -615,25 +983,17 @@ bgmBtn.addEventListener("click", () => {
 
 // 10. 흔들기 기능
 let shakeCount = 3;
-let isShakeCooldown = false;
-
 shakeBtn.addEventListener("click", () => {
-  if (shakeCount > 0 && !isShakeCooldown) {
+  if (shakeCount > 0) {
     shakeCount--;
+    shakeBtn.textContent = `🫨 흔들기 (${shakeCount})`;
 
     world.bodies.forEach((body) => {
       if (body.label === "fruit" && !body.isStatic) {
         const forceMagnitude = 0.05 * body.mass;
-
-        // 데드라인 근처(150px 여유)에 있는 과일은 위로 튕기지 않도록 힘 조절
-        let forceY = -forceMagnitude;
-        if (body.position.y < limitLineY + 150) {
-          forceY = 0;
-        }
-
         Body.applyForce(body, body.position, {
           x: (Math.random() - 0.5) * forceMagnitude,
-          y: forceY, // 위로 튕기기
+          y: -forceMagnitude, // 위로 튕기기
         });
       }
     });
@@ -647,24 +1007,6 @@ shakeBtn.addEventListener("click", () => {
 
     if (shakeCount === 0) {
       shakeBtn.disabled = true;
-      shakeBtn.textContent = `🫨 흔들기 (0)`;
-    } else {
-      isShakeCooldown = true;
-      shakeBtn.disabled = true;
-      let cooldown = 3;
-      shakeBtn.textContent = `⏳ ${cooldown}s`;
-
-      const timer = setInterval(() => {
-        cooldown--;
-        if (cooldown > 0) {
-          shakeBtn.textContent = `⏳ ${cooldown}s`;
-        } else {
-          clearInterval(timer);
-          isShakeCooldown = false;
-          shakeBtn.disabled = false;
-          shakeBtn.textContent = `🫨 흔들기 (${shakeCount})`;
-        }
-      }, 1000);
     }
   }
 });
@@ -709,338 +1051,3 @@ themeBtn.addEventListener("click", () => {
     themeBtn.textContent = "🌙 Night";
   }
 });
-
-function drawFruitDecoration(ctx, radius, fruitData, face) {
-  const name = fruitData.name;
-
-  // 배경 원 그리기 (UI 및 게임 화면 공통)
-  ctx.beginPath();
-  ctx.arc(0, 0, radius, 0, Math.PI * 2);
-  ctx.fillStyle = fruitData.color;
-  ctx.fill();
-
-  // 0. 과일 특징 그리기 (줄기, 잎, 무늬 등)
-  ctx.lineCap = "round";
-  ctx.lineJoin = "round";
-
-  if (name === "체리") {
-    // 줄기
-    ctx.beginPath();
-    ctx.moveTo(0, -radius * 0.8);
-    ctx.quadraticCurveTo(
-      radius * 0.2,
-      -radius * 1.5,
-      radius * 0.8,
-      -radius * 2,
-    );
-    ctx.strokeStyle = "#6d4c41";
-    ctx.lineWidth = 3;
-    ctx.stroke();
-  } else if (name === "딸기") {
-    // 씨앗
-    ctx.fillStyle = "rgba(255, 235, 59, 0.6)";
-    [
-      [-0.4, 0.2],
-      [0.4, 0.2],
-      [0, 0.6],
-      [-0.3, -0.2],
-      [0.3, -0.2],
-    ].forEach((pos) => {
-      ctx.beginPath();
-      ctx.arc(radius * pos[0], radius * pos[1], radius * 0.08, 0, Math.PI * 2);
-      ctx.fill();
-    });
-  } else if (name === "한라봉") {
-    // 꼭지 (볼록한 부분)
-    ctx.beginPath();
-    ctx.arc(0, -radius * 0.9, radius * 0.35, Math.PI, 0);
-    ctx.fillStyle = fruitData.color;
-    ctx.fill();
-    // 잎
-    ctx.beginPath();
-    ctx.ellipse(
-      radius * 0.2,
-      -radius * 1.1,
-      radius * 0.2,
-      radius * 0.1,
-      -Math.PI / 4,
-      0,
-      Math.PI * 2,
-    );
-    ctx.fillStyle = "#4CAF50";
-    ctx.fill();
-  } else if (name === "사과" || name === "오렌지" || name === "복숭아") {
-    // 잎
-    ctx.beginPath();
-    ctx.ellipse(
-      0,
-      -radius * 0.95,
-      radius * 0.2,
-      radius * 0.1,
-      -Math.PI / 4,
-      0,
-      Math.PI * 2,
-    );
-    ctx.fillStyle = "#4CAF50";
-    ctx.fill();
-    // 줄기 (사과만)
-    if (name === "사과") {
-      ctx.beginPath();
-      ctx.moveTo(0, -radius * 0.8);
-      ctx.lineTo(0, -radius * 1.1);
-      ctx.strokeStyle = "#6d4c41";
-      ctx.lineWidth = 3;
-      ctx.stroke();
-    }
-  } else if (name === "배") {
-    // 줄기
-    ctx.beginPath();
-    ctx.moveTo(0, -radius * 0.9);
-    ctx.lineTo(radius * 0.1, -radius * 1.2);
-    ctx.strokeStyle = "#6d4c41";
-    ctx.lineWidth = 3;
-    ctx.stroke();
-  } else if (name === "파인애플") {
-    // 뾰족한 잎
-    ctx.fillStyle = "#4CAF50";
-    ctx.beginPath();
-    ctx.moveTo(0, -radius * 0.9);
-    ctx.lineTo(-radius * 0.3, -radius * 1.4);
-    ctx.lineTo(radius * 0.3, -radius * 1.4);
-    ctx.fill();
-  } else if (name === "멜론") {
-    // 그물 무늬
-    ctx.strokeStyle = "rgba(255,255,255,0.3)";
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.moveTo(-radius * 0.5, -radius * 0.5);
-    ctx.lineTo(radius * 0.5, -radius * 0.5);
-    ctx.moveTo(-radius * 0.5, radius * 0.5);
-    ctx.lineTo(radius * 0.5, radius * 0.5);
-    ctx.moveTo(0, -radius * 0.8);
-    ctx.lineTo(0, radius * 0.8);
-    ctx.stroke();
-    // T자 줄기
-    ctx.strokeStyle = "#6d4c41";
-    ctx.lineWidth = 4;
-    ctx.beginPath();
-    ctx.moveTo(0, -radius);
-    ctx.lineTo(0, -radius * 1.2);
-    ctx.moveTo(-radius * 0.15, -radius * 1.2);
-    ctx.lineTo(radius * 0.15, -radius * 1.2);
-    ctx.stroke();
-  } else if (name === "수박") {
-    // 줄무늬
-    ctx.strokeStyle = "#1b5e1f85"; // 진한 초록
-    ctx.lineWidth = radius * 0.1;
-    ctx.beginPath();
-    for (let i = -0.8; i <= 0.85; i += 0.4) {
-      const yLen = Math.sqrt(1 - i * i) * 0.8;
-      ctx.moveTo(radius * i, -radius * yLen);
-      ctx.bezierCurveTo(
-        radius * (i - 0.3),
-        -radius * 0.2,
-        radius * (i + 0.3),
-        radius * 0.2,
-        radius * i,
-        radius * yLen,
-      );
-    }
-    ctx.stroke();
-  }
-
-  // 1. 볼터치 (귀여움 포인트)
-  ctx.fillStyle = "rgba(255, 100, 100, 0.4)"; // 연한 분홍색
-  const blushX = radius * 0.45;
-  const blushY = radius * 0.1;
-  const blushSize = radius * 0.18; // 볼터치 크기 증가
-
-  ctx.beginPath();
-  ctx.arc(-blushX, blushY, blushSize, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.beginPath();
-  ctx.arc(blushX, blushY, blushSize, 0, Math.PI * 2);
-  ctx.fill();
-
-  // 2. 눈과 입 스타일 설정
-  ctx.fillStyle = "#444"; // 진한 회색 (더 선명하게)
-  ctx.strokeStyle = "#444";
-  ctx.lineWidth = Math.max(2, radius * 0.08); // 크기에 비례한 두께
-  ctx.lineCap = "round";
-
-  const eyeX = radius * 0.3;
-  const eyeY = -radius * 0.15;
-  const eyeSize = radius * 0.13;
-
-  // 눈 그리기 헬퍼 (반짝이는 하이라이트 포함)
-  const drawCuteEye = (ex, ey, es) => {
-    ctx.beginPath();
-    ctx.arc(ex, ey, es, 0, Math.PI * 2);
-    ctx.fillStyle = "#444";
-    ctx.fill();
-    // 하이라이트 (흰색 점)
-    ctx.beginPath();
-    ctx.arc(ex - es * 0.3, ey - es * 0.3, es * 0.4, 0, Math.PI * 2);
-    ctx.fillStyle = "white";
-    ctx.fill();
-  };
-
-  if (face === "smile") {
-    // 기본 스마일
-    drawCuteEye(-eyeX, eyeY, eyeSize);
-    drawCuteEye(eyeX, eyeY, eyeSize);
-    ctx.beginPath();
-    ctx.arc(0, 0, radius * 0.3, 0.2 * Math.PI, 0.8 * Math.PI);
-    ctx.stroke();
-  } else if (face === "wink") {
-    // 윙크
-    drawCuteEye(-eyeX, eyeY, eyeSize);
-    // 윙크하는 눈 (> 모양)
-    ctx.beginPath();
-    ctx.moveTo(eyeX - eyeSize, eyeY);
-    ctx.quadraticCurveTo(eyeX, eyeY - eyeSize, eyeX + eyeSize, eyeY);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.arc(0, 0, radius * 0.3, 0.2 * Math.PI, 0.8 * Math.PI);
-    ctx.stroke();
-  } else if (face === "surprised") {
-    // 놀람 (O 입)
-    // 눈 (작은 점)
-    ctx.beginPath();
-    ctx.arc(-eyeX, eyeY, eyeSize * 0.8, 0, Math.PI * 2);
-    ctx.fillStyle = "#444";
-    ctx.fill();
-    ctx.beginPath();
-    ctx.arc(eyeX, eyeY, eyeSize * 0.8, 0, Math.PI * 2);
-    ctx.fill();
-    // 입 (동그란 O)
-    ctx.beginPath();
-    ctx.ellipse(
-      0,
-      radius * 0.2,
-      radius * 0.1,
-      radius * 0.15,
-      0,
-      0,
-      Math.PI * 2,
-    );
-    ctx.stroke();
-  } else if (face === "sleepy") {
-    // 졸림 (- - 눈)
-    ctx.beginPath();
-    ctx.moveTo(-eyeX - eyeSize, eyeY);
-    ctx.lineTo(-eyeX + eyeSize, eyeY);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(eyeX - eyeSize, eyeY);
-    ctx.lineTo(eyeX + eyeSize, eyeY);
-    ctx.stroke();
-    // 입 (작은 o)
-    ctx.beginPath();
-    ctx.arc(0, 0, radius * 0.2, 0.2 * Math.PI, 0.8 * Math.PI);
-    ctx.stroke();
-  } else if (face === "neutral") {
-    // 무표정 (- 입)
-    drawCuteEye(-eyeX, eyeY, eyeSize);
-    drawCuteEye(eyeX, eyeY, eyeSize);
-    ctx.beginPath();
-    ctx.moveTo(-radius * 0.2, radius * 0.2);
-    ctx.lineTo(radius * 0.2, radius * 0.2);
-    ctx.stroke();
-  } else if (face === "laugh") {
-    // 웃음 (> < 눈)
-    ctx.beginPath();
-    ctx.moveTo(-eyeX - eyeSize, eyeY - eyeSize / 2);
-    ctx.lineTo(-eyeX, eyeY + eyeSize / 2);
-    ctx.lineTo(-eyeX + eyeSize, eyeY - eyeSize / 2);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(eyeX - eyeSize, eyeY - eyeSize / 2);
-    ctx.lineTo(eyeX, eyeY + eyeSize / 2);
-    ctx.lineTo(eyeX + eyeSize, eyeY - eyeSize / 2);
-    ctx.stroke();
-    // 입 (반달 채움)
-    ctx.beginPath();
-    ctx.arc(0, radius * 0.1, radius * 0.25, 0, Math.PI, false);
-    ctx.fillStyle = "#444";
-    ctx.fill();
-  } else if (face === "worried") {
-    // 걱정 (ㅅ 입)
-    drawCuteEye(-eyeX, eyeY, eyeSize);
-    drawCuteEye(eyeX, eyeY, eyeSize);
-    // 눈썹
-    ctx.beginPath();
-    ctx.moveTo(-eyeX - eyeSize, eyeY - eyeSize * 1.5);
-    ctx.lineTo(-eyeX + eyeSize / 2, eyeY - eyeSize * 2);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(eyeX + eyeSize, eyeY - eyeSize * 1.5);
-    ctx.lineTo(eyeX - eyeSize / 2, eyeY - eyeSize * 2);
-    ctx.stroke();
-    // 입 (물결)
-    ctx.beginPath();
-    ctx.arc(0, radius * 0.4, radius * 0.2, 1.2 * Math.PI, 1.8 * Math.PI);
-    ctx.stroke();
-  } else if (face === "happy") {
-    // 행복 (^ ^ 눈)
-    ctx.beginPath();
-    ctx.arc(-eyeX, eyeY + eyeSize / 2, eyeSize, Math.PI, 0);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.arc(eyeX, eyeY + eyeSize / 2, eyeSize, Math.PI, 0);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.arc(0, 0, radius * 0.3, 0.2 * Math.PI, 0.8 * Math.PI);
-    ctx.stroke();
-  } else if (face === "confused") {
-    // 혼란 (짝짝이 눈)
-    drawCuteEye(-eyeX, eyeY, eyeSize * 0.8);
-    drawCuteEye(eyeX, eyeY, eyeSize * 1.2);
-    // 입 (지그재그)
-    ctx.beginPath();
-    ctx.moveTo(-radius * 0.1, radius * 0.2);
-    ctx.lineTo(radius * 0.2, radius * 0.1);
-    ctx.stroke();
-  } else if (face === "excited") {
-    // 신남 (X X 눈)
-    ctx.beginPath();
-    ctx.moveTo(-eyeX - eyeSize, eyeY - eyeSize);
-    ctx.lineTo(-eyeX + eyeSize, eyeY + eyeSize);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(-eyeX + eyeSize, eyeY - eyeSize);
-    ctx.lineTo(-eyeX - eyeSize, eyeY + eyeSize);
-    ctx.stroke();
-
-    ctx.beginPath();
-    ctx.moveTo(eyeX - eyeSize, eyeY - eyeSize);
-    ctx.lineTo(eyeX + eyeSize, eyeY + eyeSize);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(eyeX + eyeSize, eyeY - eyeSize);
-    ctx.lineTo(eyeX - eyeSize, eyeY + eyeSize);
-    ctx.stroke();
-
-    // 입 (D 모양)
-    ctx.beginPath();
-    ctx.arc(0, radius * 0.1, radius * 0.25, 0, Math.PI);
-    ctx.closePath();
-    ctx.fillStyle = "#444";
-    ctx.fill();
-  } else if (face === "big_smile") {
-    // 왕 스마일
-    drawCuteEye(-eyeX, eyeY, eyeSize * 1.2);
-    drawCuteEye(eyeX, eyeY, eyeSize * 1.2);
-    // 입 (큰 D)
-    ctx.beginPath();
-    ctx.arc(0, radius * 0.1, radius * 0.3, 0, Math.PI);
-    ctx.closePath();
-    ctx.fillStyle = "#444";
-    ctx.fill();
-    // 혀
-    ctx.beginPath();
-    ctx.arc(0, radius * 0.3, radius * 0.15, Math.PI, 0);
-    ctx.fillStyle = "#ff6b6b";
-    ctx.fill();
-  }
-}
