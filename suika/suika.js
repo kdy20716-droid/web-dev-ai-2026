@@ -1352,6 +1352,7 @@ function resizeGame() {
 }
 
 window.addEventListener("resize", resizeGame);
+window.addEventListener("orientationchange", resizeGame); // 화면 회전 감지 추가
 // 초기 실행 (레이아웃 안정화 후 실행)
 setTimeout(resizeGame, 0);
 
