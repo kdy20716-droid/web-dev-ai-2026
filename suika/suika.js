@@ -1,4 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
+import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-analytics.js";
 import {
   getFirestore,
   collection,
@@ -8,6 +9,11 @@ import {
   orderBy,
   limit,
 } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+import { firebaseConfig } from "./firebaseConfig.js";
+
+// 파이어베이스 초기화
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
 
 const { Engine, Render, Runner, World, Bodies, Body, Events } = Matter;
 
