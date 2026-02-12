@@ -1341,11 +1341,8 @@ function resizeGame() {
   const windowWidth = window.innerWidth;
   const windowHeight = window.innerHeight;
 
-  // 스케일 계산 (너비와 높이 중 더 작은 쪽에 맞춤 - 모바일 화면 대응)
-  let scale = Math.min(
-    (windowWidth - 20) / baseWidth,
-    (windowHeight - 100) / baseHeight, // 위아래 패딩(50px * 2) 고려
-  );
+  // 스케일 계산 (너비만 맞춰서 모바일 대응, 높이는 스크롤 허용)
+  let scale = (windowWidth - 20) / baseWidth;
 
   // 최대 1배까지만 확대 (깨짐 방지), 화면이 작으면 축소
   if (scale > 1) scale = 1;
