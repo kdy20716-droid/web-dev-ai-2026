@@ -107,9 +107,16 @@ form.addEventListener("submit", (e) => {
   );
 
   if (isAllValid) {
+    // 로컬 스토리지에 사용자 정보 저장 (실습용)
+    const user = {
+      id: id.value,
+      pw: pw.value,
+      name: name.value,
+    };
+    localStorage.setItem(id.value, JSON.stringify(user));
+
     alert("회원가입되었습니다");
-    // 실제 서버 전송 로직은 여기에 작성 (form.submit() 등)
-    // form.submit();
+    location.href = "practice11-login.html";
   } else {
     alert("입력 정보를 다시 확인해주세요.");
 
