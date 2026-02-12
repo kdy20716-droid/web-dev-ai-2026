@@ -210,7 +210,9 @@ function createFruit(x, y, index, isStatic = false) {
   const fruit = Bodies.circle(x, y, fruitData.radius, {
     label: "fruit",
     isStatic: isStatic,
-    restitution: 0.2, // 탄성
+    restitution: 0.3, // 탄성 높임 (충돌 시 반발력 증가)
+    friction: 0.0005, // 마찰력 더 감소 (아주 잘 구르도록)
+    frictionStatic: 0.0005, // 정지 마찰력 더 감소
     render: { fillStyle: fruitData.color },
   });
   fruit.fruitIndex = index; // 과일 단계 저장
@@ -260,8 +262,9 @@ function addCurrentFruit() {
 gameArea.addEventListener("mousemove", (e) => {
   if (!isClickable || !currentFruit) return;
 
-  const rect = gameArea.getBoundingClientRect();
-  let x = e.clientX - rect.left;
+  const rect = render.canvas.getBoundingClientRect();
+  const scaleX = rect.width / width;
+  let x = (e.clientX - rect.left) / scaleX;
 
   // 벽 밖으로 나가지 않게 제한
   const radius = currentFruit.circleRadius;
@@ -277,8 +280,9 @@ gameArea.addEventListener(
     if (!isClickable || !currentFruit) return;
     e.preventDefault(); // 스크롤 방지
 
-    const rect = gameArea.getBoundingClientRect();
-    let x = e.touches[0].clientX - rect.left;
+    const rect = render.canvas.getBoundingClientRect();
+    const scaleX = rect.width / width;
+    let x = (e.touches[0].clientX - rect.left) / scaleX;
 
     // 벽 밖으로 나가지 않게 제한
     const radius = currentFruit.circleRadius;
@@ -296,8 +300,9 @@ gameArea.addEventListener(
     if (!isClickable || !currentFruit) return;
     e.preventDefault(); // 스크롤 방지
 
-    const rect = gameArea.getBoundingClientRect();
-    let x = e.touches[0].clientX - rect.left;
+    const rect = render.canvas.getBoundingClientRect();
+    const scaleX = rect.width / width;
+    let x = (e.touches[0].clientX - rect.left) / scaleX;
 
     // 벽 밖으로 나가지 않게 제한
     const radius = currentFruit.circleRadius;
@@ -311,8 +316,9 @@ gameArea.addEventListener(
 
 gameArea.addEventListener("click", (e) => {
   if (isClickable && currentFruit) {
-    const rect = gameArea.getBoundingClientRect();
-    let x = e.clientX - rect.left;
+    const rect = render.canvas.getBoundingClientRect();
+    const scaleX = rect.width / width;
+    let x = (e.clientX - rect.left) / scaleX;
 
     // 벽 밖으로 나가지 않게 제한
     const radius = currentFruit.circleRadius;
