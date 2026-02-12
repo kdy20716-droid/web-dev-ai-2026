@@ -1354,3 +1354,48 @@ function resizeGame() {
 window.addEventListener("resize", resizeGame);
 // 초기 실행 (레이아웃 안정화 후 실행)
 setTimeout(resizeGame, 0);
+
+// 18. 동적 파비콘 및 공유 이미지 설정
+function setDynamicImages() {
+  // 1. 파비콘 설정 (탭 아이콘)
+  const canvas = document.createElement("canvas");
+  canvas.width = 64;
+  canvas.height = 64;
+  const ctx = canvas.getContext("2d");
+
+  // 수박 데이터 가져오기 (FRUITS 배열의 마지막)
+  const watermelon = FRUITS[FRUITS.length - 1];
+
+  // 캔버스 중앙으로 이동
+  ctx.translate(32, 32);
+
+  // 수박 그리기 (반지름 26 정도로 설정)
+  drawFruitDecoration(ctx, 26, watermelon, watermelon.face);
+
+  // 기존 파비콘 링크를 찾아서 교체하거나 새로 생성
+  let link = document.querySelector("link[rel~='icon']");
+  if (!link) {
+    link = document.createElement("link");
+    link.rel = "icon";
+    document.head.appendChild(link);
+  }
+  link.href = canvas.toDataURL();
+
+  // 2. OG 이미지 설정 (공유 미리보기)
+  // 주의: 카카오톡 등 봇은 JS를 실행하지 않아 기본 이미지가 뜰 수 있습니다.
+  const ogCanvas = document.createElement("canvas");
+  ogCanvas.width = 512;
+  ogCanvas.height = 512;
+  const ogCtx = ogCanvas.getContext("2d");
+
+  ogCtx.translate(256, 256);
+  drawFruitDecoration(ogCtx, 200, watermelon, watermelon.face); // 반지름 200으로 크게 그리기
+
+  const ogImage = document.querySelector("meta[property='og:image']");
+  if (ogImage) {
+    ogImage.content = ogCanvas.toDataURL();
+  }
+}
+
+// 설정 실행
+setDynamicImages();
