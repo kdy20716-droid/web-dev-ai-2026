@@ -1,5 +1,4 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
-import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-analytics.js";
 import {
   getFirestore,
   collection,
@@ -13,7 +12,7 @@ import { firebaseConfig } from "./firebaseConfig.js";
 
 // 파이어베이스 초기화
 const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
+const db = getFirestore(app);
 
 const { Engine, Render, Runner, World, Bodies, Body, Events } = Matter;
 
@@ -85,8 +84,8 @@ const scoreElement = document.getElementById("score");
 let dropCount = 0;
 let nextFruitIndex = null; // 다음에 나올 과일 인덱스
 const nextFruitElement = document.getElementById("next-fruit");
-const highScoreElement = document.getElementById("high-score");
 const recentScoresElement = document.getElementById("recent-scores");
+const latestScoresElement = document.getElementById("latest-scores");
 const gameOverModal = document.getElementById("game-over-modal");
 const finalScoreElement = document.getElementById("final-score");
 const restartBtn = document.getElementById("restart-btn");
@@ -102,19 +101,53 @@ let comboCount = 0;
 let comboTimer = null;
 
 // 기록 불러오기 함수
-function loadRecords() {
-  const highScore = localStorage.getItem("suika-high-score") || 0;
-  highScoreElement.textContent = highScore;
-
-  const recentScores = JSON.parse(
-    localStorage.getItem("suika-recent-scores") || "[]",
+async function loadRecords() {
+  // 내 점수 ID 목록 가져오기
+  const myScoreIds = JSON.parse(
+    localStorage.getItem("suika-my-score-ids") || "[]",
   );
-  recentScoresElement.innerHTML = recentScores
+
+  // 파이어베이스(서버)에서 상위 5개 점수 가져오기 (점수 내림차순)
+  const q = query(collection(db, "scores"), orderBy("score", "desc"), limit(5));
+  const querySnapshot = await getDocs(q);
+
+  const scores = querySnapshot.docs.map((doc) => ({
+    id: doc.id,
+    ...doc.data(),
+  }));
+  recentScoresElement.innerHTML = scores
+    .map((entry, index) => {
+      let rank = `${index + 1}위`;
+      if (index === 0) rank = "🥇";
+      if (index === 1) rank = "🥈";
+      if (index === 2) rank = "🥉";
+
+      const isMine = myScoreIds.includes(entry.id);
+      const style = isMine
+        ? 'style="color: #ffeaa7; font-weight: bold; text-shadow: 1px 1px 2px rgba(0,0,0,0.5);"'
+        : "";
+      return `<li ${style}>${rank} ${entry.name}: ${entry.score}</li>`;
+    })
+    .join("");
+
+  // 최근 기록 10개 가져오기 (날짜 내림차순)
+  const qRecent = query(
+    collection(db, "scores"),
+    orderBy("date", "desc"),
+    limit(10),
+  );
+  const querySnapshotRecent = await getDocs(qRecent);
+  const recentScores = querySnapshotRecent.docs.map((doc) => ({
+    id: doc.id,
+    ...doc.data(),
+  }));
+  latestScoresElement.innerHTML = recentScores
     .map((entry) => {
-      if (typeof entry === "object") {
-        return `<li>${entry.name}: ${entry.score}</li>`;
-      }
-      return `<li>익명: ${entry}</li>`;
+      const isMine = myScoreIds.includes(entry.id);
+      const style = isMine
+        ? 'style="color: #ffeaa7; font-weight: bold; text-shadow: 1px 1px 2px rgba(0,0,0,0.5);"'
+        : "";
+      return `<li ${style}>${entry.name}: ${entry.score}</li>`;
     })
     .join("");
 }
@@ -543,27 +576,76 @@ function createParticles(x, y, color) {
 }
 
 // 8. 재시작 버튼 이벤트
-restartBtn.addEventListener("click", () => {
+restartBtn.addEventListener("click", async () => {
   // 점수 저장 로직 이동
   const currentScore = score;
   const playerName = document.getElementById("player-name").value || "익명";
 
-  const highScore = Number(localStorage.getItem("suika-high-score") || 0);
-  if (currentScore > highScore) {
-    localStorage.setItem("suika-high-score", currentScore);
+  restartBtn.disabled = true;
+  restartBtn.textContent = "저장 중...";
+
+  // 게임을 먼저 초기화 (저장 지연으로 인한 멈춤 방지)
+  resetGame();
+
+  // 서버(파이어베이스)에 점수 저장 (백그라운드 처리)
+  try {
+    const docRef = await addDoc(collection(db, "scores"), {
+      name: playerName,
+      score: currentScore,
+      date: new Date().toISOString(),
+    });
+
+    // 내 점수 ID를 로컬 스토리지에 저장 (하이라이트용)
+    const myScoreIds = JSON.parse(
+      localStorage.getItem("suika-my-score-ids") || "[]",
+    );
+    myScoreIds.push(docRef.id);
+    localStorage.setItem("suika-my-score-ids", JSON.stringify(myScoreIds));
+
+    // 저장이 완료되면 랭킹 목록 갱신
+    loadRecords();
+  } catch (e) {
+    console.error("점수 저장 실패:", e);
+    alert("점수 저장 실패! (게임은 초기화되었습니다)\n" + e.message);
   }
-
-  const recentScores = JSON.parse(
-    localStorage.getItem("suika-recent-scores") || "[]",
-  );
-  // 이름과 점수를 객체로 저장
-  recentScores.unshift({ name: playerName, score: currentScore });
-
-  if (recentScores.length > 10) recentScores.pop(); // 10개까지만 유지
-  localStorage.setItem("suika-recent-scores", JSON.stringify(recentScores));
-
-  location.reload();
 });
+
+// 게임 초기화 함수 (새로고침 없이 재시작)
+function resetGame() {
+  // 1. 물리 엔진 초기화
+  World.clear(world); // 모든 물체 제거
+  World.add(world, [ground, leftWall, rightWall]); // 벽 다시 추가
+
+  // 2. 게임 상태 변수 초기화
+  score = 0;
+  scoreElement.textContent = score;
+  dropCount = 0;
+  comboCount = 0;
+  gameOverTimestamp = 0;
+  currentFruit = null;
+  isClickable = true;
+  nextFruitIndex = null;
+
+  // 흔들기 초기화
+  shakeCount = 3;
+  isShakeCooldown = false;
+  if (shakeTimer) {
+    clearInterval(shakeTimer);
+    shakeTimer = null;
+  }
+  shakeBtn.disabled = false;
+  shakeBtn.textContent = "🫨 흔들기 (3)";
+
+  // 3. UI 초기화
+  gameOverModal.classList.add("hidden");
+  restartBtn.disabled = false;
+  restartBtn.textContent = "기록 저장 및 재시작";
+
+  // 4. 게임 다시 시작
+  Runner.run(runner, engine);
+  addCurrentFruit();
+  loadRecords(); // 랭킹 갱신
+}
 
 // 9. BGM 기능
 let bgmTimer = null;
@@ -622,6 +704,7 @@ bgmBtn.addEventListener("click", () => {
 // 10. 흔들기 기능
 let shakeCount = 3;
 let isShakeCooldown = false;
+let shakeTimer = null;
 
 shakeBtn.addEventListener("click", () => {
   if (shakeCount > 0 && !isShakeCooldown) {
@@ -660,12 +743,13 @@ shakeBtn.addEventListener("click", () => {
       let cooldown = 3;
       shakeBtn.textContent = `⏳ ${cooldown}s`;
 
-      const timer = setInterval(() => {
+      shakeTimer = setInterval(() => {
         cooldown--;
         if (cooldown > 0) {
           shakeBtn.textContent = `⏳ ${cooldown}s`;
         } else {
-          clearInterval(timer);
+          clearInterval(shakeTimer);
+          shakeTimer = null;
           isShakeCooldown = false;
           shakeBtn.disabled = false;
           shakeBtn.textContent = `🫨 흔들기 (${shakeCount})`;
@@ -713,6 +797,24 @@ themeBtn.addEventListener("click", () => {
     themeBtn.textContent = "🌞 Day";
   } else {
     themeBtn.textContent = "🌙 Night";
+  }
+});
+
+// 14. 개발자 전용 치트키 (Shift + Alt + W)
+window.addEventListener("keydown", (e) => {
+  if (
+    e.shiftKey &&
+    e.altKey &&
+    (e.key.toLowerCase() === "w" || e.key === "ㅈ")
+  ) {
+    if (currentFruit && isClickable) {
+      World.remove(world, currentFruit);
+      const { x, y } = currentFruit.position;
+      // 수박은 배열의 마지막 요소
+      currentFruit = createFruit(x, y, FRUITS.length - 1, true);
+      World.add(world, currentFruit);
+      console.log("🍉 시크릿 모드: 수박 장전 완료!");
+    }
   }
 });
 
