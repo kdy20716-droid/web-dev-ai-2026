@@ -90,11 +90,13 @@ const gameOverModal = document.getElementById("game-over-modal");
 const finalScoreElement = document.getElementById("final-score");
 const restartBtn = document.getElementById("restart-btn");
 const bgmBtn = document.getElementById("bgm-btn");
+const bgmVolumeSlider = document.getElementById("bgm-volume");
 const shakeBtn = document.getElementById("shake-btn");
 const evolutionList = document.getElementById("evolution-list");
 const startScreen = document.getElementById("start-screen");
 const startBtn = document.getElementById("start-btn");
 const themeBtn = document.getElementById("theme-btn");
+const shareBtn = document.getElementById("share-btn");
 
 // 콤보 시스템 변수
 let comboCount = 0;
@@ -115,12 +117,20 @@ async function loadRecords() {
     id: doc.id,
     ...doc.data(),
   }));
-  recentScoresElement.innerHTML = scores
+
+  // 5칸 고정 (데이터가 없어도 빈 칸 유지)
+  const fixedTop5 = Array.from({ length: 5 }, (_, i) => scores[i] || null);
+
+  recentScoresElement.innerHTML = fixedTop5
     .map((entry, index) => {
       let rank = `${index + 1}위`;
       if (index === 0) rank = "🥇";
       if (index === 1) rank = "🥈";
       if (index === 2) rank = "🥉";
+
+      if (!entry) {
+        return `<li>${rank} <span style="color: rgba(255,255,255,0.5);">-</span></li>`;
+      }
 
       const isMine = myScoreIds.includes(entry.id);
       const style = isMine
@@ -130,19 +140,30 @@ async function loadRecords() {
     })
     .join("");
 
-  // 최근 기록 10개 가져오기 (날짜 내림차순)
+  // 최근 기록 20개 가져오기 (날짜 내림차순)
   const qRecent = query(
     collection(db, "scores"),
     orderBy("date", "desc"),
-    limit(10),
+    limit(20),
   );
   const querySnapshotRecent = await getDocs(qRecent);
   const recentScores = querySnapshotRecent.docs.map((doc) => ({
     id: doc.id,
     ...doc.data(),
   }));
-  latestScoresElement.innerHTML = recentScores
+
+  // 20칸 고정 (데이터가 없어도 빈 칸 유지)
+  const fixedRecent10 = Array.from(
+    { length: 20 },
+    (_, i) => recentScores[i] || null,
+  );
+
+  latestScoresElement.innerHTML = fixedRecent10
     .map((entry) => {
+      if (!entry) {
+        return `<li style="color: rgba(255,255,255,0.5);">-</li>`;
+      }
+
       const isMine = myScoreIds.includes(entry.id);
       const style = isMine
         ? 'style="color: #ffeaa7; font-weight: bold; text-shadow: 1px 1px 2px rgba(0,0,0,0.5);"'
@@ -251,6 +272,25 @@ gameArea.addEventListener("mousemove", (e) => {
 });
 
 gameArea.addEventListener(
+  "touchstart",
+  (e) => {
+    if (!isClickable || !currentFruit) return;
+    e.preventDefault(); // 스크롤 방지
+
+    const rect = gameArea.getBoundingClientRect();
+    let x = e.touches[0].clientX - rect.left;
+
+    // 벽 밖으로 나가지 않게 제한
+    const radius = currentFruit.circleRadius;
+    if (x < 20 + radius) x = 20 + radius;
+    if (x > width - 20 - radius) x = width - 20 - radius;
+
+    Body.setPosition(currentFruit, { x: x, y: 30 });
+  },
+  { passive: false },
+);
+
+gameArea.addEventListener(
   "touchmove",
   (e) => {
     if (!isClickable || !currentFruit) return;
@@ -269,8 +309,19 @@ gameArea.addEventListener(
   { passive: false },
 );
 
-gameArea.addEventListener("click", () => {
-  if (isClickable) dropFruit();
+gameArea.addEventListener("click", (e) => {
+  if (isClickable && currentFruit) {
+    const rect = gameArea.getBoundingClientRect();
+    let x = e.clientX - rect.left;
+
+    // 벽 밖으로 나가지 않게 제한
+    const radius = currentFruit.circleRadius;
+    if (x < 20 + radius) x = 20 + radius;
+    if (x > width - 20 - radius) x = width - 20 - radius;
+
+    Body.setPosition(currentFruit, { x: x, y: 30 });
+    dropFruit();
+  }
 });
 
 gameArea.addEventListener("touchend", (e) => {
@@ -484,21 +535,18 @@ function playGameOverSound() {
   const oscillator = audioCtx.createOscillator();
   const gainNode = audioCtx.createGain();
 
-  oscillator.type = "sawtooth"; // 거친 소리
-  oscillator.frequency.setValueAtTime(300, audioCtx.currentTime);
-  oscillator.frequency.exponentialRampToValueAtTime(
-    50,
-    audioCtx.currentTime + 1.5,
-  ); // 음이 뚝 떨어짐
+  oscillator.type = "triangle"; // 부드러운 소리
+  oscillator.frequency.setValueAtTime(330, audioCtx.currentTime); // E4
+  oscillator.frequency.linearRampToValueAtTime(165, audioCtx.currentTime + 0.8); // 부드럽게 하강
 
   gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
-  gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 1.5);
+  gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.8);
 
   oscillator.connect(gainNode);
   gainNode.connect(audioCtx.destination);
 
   oscillator.start();
-  oscillator.stop(audioCtx.currentTime + 1.5);
+  oscillator.stop(audioCtx.currentTime + 0.8);
 }
 
 function playClapSound() {
@@ -650,56 +698,150 @@ function resetGame() {
 // 9. BGM 기능
 let bgmTimer = null;
 let bgmIndex = 0;
-const bgmNotes = [
-  261.63,
-  329.63,
-  392.0,
-  329.63, // C E G E
-  261.63,
-  329.63,
-  392.0,
-  329.63,
-  349.23,
-  440.0,
-  523.25,
-  440.0, // F A C A
-  349.23,
-  440.0,
-  523.25,
-  440.0,
+let bgmState = 0; // 0: OFF, 1: BGM1, 2: BGM2, 3: BGM3
+let bgmVolume = 1.0; // 기본 볼륨
+
+const bgmTracks = [
+  {
+    name: "🎵 BGM 1 (Original)",
+    tempo: 400,
+    type: "sine",
+    notes: [
+      261.63,
+      329.63,
+      392.0,
+      329.63, // C E G E
+      261.63,
+      329.63,
+      392.0,
+      329.63,
+      349.23,
+      440.0,
+      523.25,
+      440.0, // F A C A
+      349.23,
+      440.0,
+      523.25,
+      440.0,
+    ],
+  },
+  {
+    name: "🎵 BGM 2 (Exciting)",
+    tempo: 150,
+    type: "triangle",
+    notes: [
+      261.63,
+      329.63,
+      392.0,
+      523.25,
+      392.0,
+      329.63, // C E G C5 G E
+      293.66,
+      349.23,
+      440.0,
+      587.33,
+      440.0,
+      349.23, // D F A D5 A F
+      329.63,
+      392.0,
+      493.88,
+      659.25,
+      493.88,
+      392.0, // E G B E5 B G
+      349.23,
+      440.0,
+      523.25,
+      698.46,
+      523.25,
+      440.0, // F A C5 F5 C A
+    ],
+  },
+  {
+    name: "🎵 BGM 3 (Lovely)",
+    name: "🎵 BGM 3 (Playful)",
+    tempo: 180,
+    type: "sine",
+    notes: [
+      261.63,
+      329.63,
+      392.0,
+      523.25, // C E G C5
+      440.0,
+      392.0,
+      349.23,
+      329.63, // A G F E
+      293.66,
+      329.63,
+      349.23,
+      293.66, // D E F D
+      261.63,
+      392.0,
+      261.63,
+      0, // C G C
+      440.0,
+      392.0,
+      349.23,
+      329.63, // A G F E
+      293.66,
+      329.63,
+      349.23,
+      293.66, // D E F D
+      261.63,
+      392.0,
+      261.63,
+      0, // C G C
+    ],
+  },
 ];
 
-function playBGM() {
+function playBGM(trackIndex) {
+  if (bgmTimer) clearInterval(bgmTimer);
   if (audioCtx.state === "suspended") audioCtx.resume();
 
+  const track = bgmTracks[trackIndex];
+  bgmIndex = 0;
+
   bgmTimer = setInterval(() => {
+    const note = track.notes[bgmIndex % track.notes.length];
     const oscillator = audioCtx.createOscillator();
     const gainNode = audioCtx.createGain();
-    oscillator.type = "sine";
-    oscillator.frequency.value = bgmNotes[bgmIndex % bgmNotes.length];
-    gainNode.gain.setValueAtTime(0.02, audioCtx.currentTime); // 아주 작게
+    oscillator.type = track.type;
+    oscillator.frequency.value = note;
+
+    // 볼륨 및 페이드 아웃
+    gainNode.gain.setValueAtTime(0.02 * bgmVolume, audioCtx.currentTime);
     gainNode.gain.exponentialRampToValueAtTime(
       0.001,
-      audioCtx.currentTime + 0.4,
+      audioCtx.currentTime + track.tempo / 1000,
     );
+
     oscillator.connect(gainNode);
     gainNode.connect(audioCtx.destination);
     oscillator.start();
-    oscillator.stop(audioCtx.currentTime + 0.4);
+    oscillator.stop(audioCtx.currentTime + track.tempo / 1000);
     bgmIndex++;
-  }, 400);
+  }, track.tempo);
 }
 
 bgmBtn.addEventListener("click", () => {
-  if (bgmTimer) {
-    clearInterval(bgmTimer);
+  bgmState = (bgmState + 1) % 4; // 0 -> 1 -> 2 -> 3 -> 0
+
+  if (bgmState === 0) {
+    if (bgmTimer) clearInterval(bgmTimer);
     bgmTimer = null;
     bgmBtn.textContent = "🎵 BGM OFF";
   } else {
-    playBGM();
-    bgmBtn.textContent = "🎵 BGM ON";
+    playBGM(bgmState - 1);
+    bgmBtn.textContent = bgmTracks[bgmState - 1].name;
   }
 });
+
+// 볼륨 슬라이더 이벤트
+if (bgmVolumeSlider) {
+  bgmVolumeSlider.addEventListener("input", (e) => {
+    bgmVolume = parseFloat(e.target.value);
+  });
+}
 
 // 10. 흔들기 기능
 let shakeCount = 3;
@@ -788,6 +930,11 @@ startBtn.addEventListener("click", () => {
   if (audioCtx.state === "suspended") {
     audioCtx.resume();
   }
+
+  // 게임 시작 시 BGM 1 자동 재생
+  bgmState = 1;
+  playBGM(0);
+  bgmBtn.textContent = bgmTracks[0].name;
 });
 
 // 13. 테마 변경 기능
@@ -797,6 +944,35 @@ themeBtn.addEventListener("click", () => {
     themeBtn.textContent = "🌞 Day";
   } else {
     themeBtn.textContent = "🌙 Night";
+  }
+});
+
+// 15. 공유하기 버튼 기능
+shareBtn.addEventListener("click", async () => {
+  // 1. 모바일/지원되는 브라우저: 네이티브 공유 창 띄우기 (카카오톡 등 앱 연동)
+  if (navigator.share) {
+    try {
+      await navigator.share({
+        title: "수박 게임 🍉",
+        text: "친구와 함께 수박 게임을 즐겨보세요! 누가 더 높은 점수를 받을까요?",
+        url: window.location.href,
+      });
+      return; // 공유 성공 시 종료
+    } catch (err) {
+      // 사용자가 공유를 취소한 경우는 에러로 처리하지 않음
+      if (err.name === "AbortError") return;
+      console.log("네이티브 공유 실패, 클립보드 복사로 전환합니다.", err);
+    }
+  }
+
+  // 2. 미지원 브라우저(PC 등): 클립보드에 주소 복사
+  try {
+    await navigator.clipboard.writeText(window.location.href);
+    alert("게임 주소가 복사되었습니다! 친구들에게 공유해보세요 🔗");
+  } catch (err) {
+    console.error("공유 실패:", err);
+    // 보안상 이유로 클립보드 접근이 안될 경우 대비
+    prompt("이 주소를 복사해서 공유하세요:", window.location.href);
   }
 });
 
@@ -1152,3 +1328,29 @@ function drawFruitDecoration(ctx, radius, fruitData, face) {
     ctx.fill();
   }
 }
+
+// 17. 화면 크기에 맞춰 게임 스케일 조절 (반응형)
+function resizeGame() {
+  const gameContainer = document.querySelector(".game-container");
+
+  // 게임 컨테이너의 기본 크기 (캔버스 480x700 + 패딩/헤더 고려)
+  const baseWidth = 520; // 480 + 40(padding)
+  const baseHeight = 850; // 700 + 150(header + padding)
+
+  // 화면 크기
+  const windowWidth = window.innerWidth;
+  const windowHeight = window.innerHeight;
+
+  // 스케일 계산 (너비만 맞춰서 모바일 대응, 높이는 스크롤)
+  let scale = (windowWidth - 20) / baseWidth;
+
+  // 최대 1배까지만 확대 (깨짐 방지), 화면이 작으면 축소
+  if (scale > 1) scale = 1;
+
+  gameContainer.style.transform = `scale(${scale})`;
+  gameContainer.style.transformOrigin = "top center";
+}
+
+window.addEventListener("resize", resizeGame);
+// 초기 실행 (레이아웃 안정화 후 실행)
+setTimeout(resizeGame, 0);

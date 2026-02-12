@@ -19,12 +19,15 @@
           <div class="label">🕒 최근 기록</div>
           <ul id="latest-scores"></ul>
         </div>
-        <button id="shake-btn">🫨 흔들기 (3)</button>
-        <button id="theme-btn">🌙 Night</button>
       </div>
       <div class="evolution-box">
         <div class="label">과일 진화 단계</div>
         <ul id="evolution-list"></ul>
+      </div>
+      <div class="control-box">
+        <button id="shake-btn">🫨 흔들기 (3)</button>
+        <button id="theme-btn">🌙 Night</button>
+        <button id="share-btn">🔗 공유하기</button>
       </div>
       <div class="header">
         <div class="score-box">
@@ -35,7 +38,18 @@
           <div class="label">NEXT</div>
           <canvas id="next-fruit" width="60" height="60"></canvas>
         </div>
-        <button id="bgm-btn">🎵 BGM OFF</button>
+        <div class="bgm-controls">
+          <button id="bgm-btn">🎵 BGM OFF</button>
+          <input
+            type="range"
+            id="bgm-volume"
+            min="0"
+            max="2"
+            step="0.1"
+            value="1"
+            title="볼륨 조절"
+          />
+        </div>
       </div>
       <div id="game-area"></div>
     </div>

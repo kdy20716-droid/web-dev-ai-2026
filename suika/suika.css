@@ -3,7 +3,7 @@ body {
   padding: 0;
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
   min-height: 100vh;
   background-color: #ffeaa7; /* 배경색을 따뜻한 노란색으로 변경 */
   background-image: radial-gradient(
@@ -13,7 +13,10 @@ body {
   ); /* 땡땡이 패턴 추가 */
   background-size: 30px 30px;
   font-family: "Noto Sans KR", sans-serif;
-  overflow: hidden;
+  overflow-y: auto;
+  padding-top: 50px;
+  padding-bottom: 50px;
+  box-sizing: border-box;
   transition:
     background-color 0.5s,
     background-image 0.5s;
@@ -45,7 +48,8 @@ body {
 .high-score-box,
 .recent-scores-box,
 .evolution-box,
-.latest-scores-box {
+.latest-scores-box,
+.control-box {
   background-color: #fab1a0;
   padding: 10px 20px;
   border-radius: 15px;
@@ -154,6 +158,16 @@ canvas {
   justify-content: center;
   color: rgba(255, 255, 255, 0.5);
   font-size: 8px;
+}
+
+.control-box {
+  position: absolute;
+  bottom: 20px;
+  right: -180px; /* 게임 화면 오른쪽 아래로 배치 */
+  width: 120px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 /* 모달 스타일 */
@@ -265,7 +279,8 @@ canvas {
 
 #bgm-btn,
 #shake-btn,
-#theme-btn {
+#theme-btn,
+#share-btn {
   background-color: #fab1a0;
   padding: 10px 20px;
   border-radius: 15px;
@@ -278,16 +293,33 @@ canvas {
 }
 
 #bgm-btn {
-  width: 150px;
+  width: 180px;
+  margin-bottom: 5px;
+}
+
+.bgm-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
+#bgm-volume {
+  width: 160px;
+  accent-color: #fab1a0; /* 슬라이더 색상 */
+  cursor: pointer;
 }
 
 #theme-btn {
   width: 100%;
-  margin-top: 10px;
+}
+
+#share-btn {
+  width: 100%;
+  font-size: 13px;
 }
 
 #shake-btn {
-  margin-top: 10px;
   width: 100%;
   font-size: 12px;
   padding: 8px 0;
