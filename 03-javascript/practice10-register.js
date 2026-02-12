@@ -112,6 +112,8 @@ form.addEventListener("submit", (e) => {
       id: id.value,
       pw: pw.value,
       name: name.value,
+      email: email.value,
+      phone: phone.value,
     };
     localStorage.setItem(id.value, JSON.stringify(user));
 

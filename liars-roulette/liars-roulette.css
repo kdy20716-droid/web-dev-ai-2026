@@ -1,0 +1,22 @@
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #1a1a1a;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  overflow: hidden;
+  font-family: "Courier New", Courier, monospace;
+}
+
+.game-container {
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+canvas {
+  display: block;
+  background-color: #222;
+  cursor: crosshair;
+}

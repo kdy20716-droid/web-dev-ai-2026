@@ -8,24 +8,44 @@
   </head>
   <body>
     <div class="container">
-      <h1>로그인</h1>
-      <form id="loginForm">
-        <div class="input-group">
-          <label for="id">아이디</label>
-          <input type="text" id="id" placeholder="아이디를 입력하세요" />
-        </div>
+      <!-- 로그인 화면 -->
+      <div id="loginSection">
+        <h1>로그인</h1>
+        <form id="loginForm">
+          <div class="input-group">
+            <label for="id">아이디</label>
+            <input type="text" id="id" placeholder="아이디를 입력하세요" />
+          </div>
 
-        <div class="input-group">
-          <label for="pw">비밀번호</label>
-          <input type="password" id="pw" placeholder="비밀번호를 입력하세요" />
-        </div>
+          <div class="input-group">
+            <label for="pw">비밀번호</label>
+            <input
+              type="password"
+              id="pw"
+              placeholder="비밀번호를 입력하세요"
+            />
+          </div>
 
-        <button type="submit" id="loginBtn">로그인</button>
+          <button type="submit" id="loginBtn">로그인</button>
 
-        <div class="links">
-          계정이 없으신가요? <a href="practice10-register.html">회원가입</a>
+          <div class="links">
+            계정이 없으신가요? <a href="practice10-register.html">회원가입</a>
+          </div>
+        </form>
+      </div>
+
+      <!-- 내 정보 화면 (초기에는 숨김) -->
+      <div id="profileSection" class="hidden">
+        <h1>내 정보</h1>
+        <div class="profile-info">
+          <p><strong>이름:</strong> <span id="profileName"></span></p>
+          <p><strong>아이디:</strong> <span id="profileId"></span></p>
+          <p><strong>이메일:</strong> <span id="profileEmail"></span></p>
+          <p><strong>전화번호:</strong> <span id="profilePhone"></span></p>
         </div>
-      </form>
+        <button id="logoutBtn">로그아웃</button>
+        <button id="withdrawBtn" class="delete-btn">회원탈퇴</button>
+      </div>
     </div>
 
     <script src="practice11-login.js"></script>
