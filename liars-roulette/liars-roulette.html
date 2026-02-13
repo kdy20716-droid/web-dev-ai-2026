@@ -3,13 +3,76 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Liar's Roulette</title>
+    <title>Liars Roulette Table</title>
     <link rel="stylesheet" href="liars-roulette.css" />
   </head>
   <body>
-    <div class="game-container">
+    <div id="game-container">
       <canvas id="gameCanvas"></canvas>
+
+      <!-- UI 레이어 -->
+      <div id="ui-layer">
+        <!-- 시작 화면 -->
+        <div id="start-screen" class="screen">
+          <h1 class="title">Liars-Roulette</h1>
+          <button id="btn-start" class="btn primary">게임 시작</button>
+        </div>
+
+        <!-- 전체 화면 버튼 -->
+        <button id="btn-fullscreen" class="btn">전체 화면</button>
+
+        <!-- 게임 HUD (헤드업 디스플레이) -->
+        <div id="game-hud" class="hidden">
+          <div id="target-rank">Table: K</div>
+          <div id="game-status" class="status-text">게임 대기 중...</div>
+          <div id="action-buttons">
+            <button id="btn-play" class="btn success" disabled>완료</button>
+            <button id="btn-liar" class="btn danger hidden">거짓말!</button>
+          </div>
+        </div>
+
+        <!-- 게임 오버 화면 -->
+        <div id="game-over-screen" class="screen hidden">
+          <h1 id="game-over-title">YOU DIED</h1>
+          <button id="btn-restart" class="btn primary">다시 시작</button>
+        </div>
+
+        <!-- 메시지 오버레이 -->
+        <div id="message-overlay" class="hidden"></div>
+      </div>
+
+      <!-- 말풍선 UI -->
+      <div id="bubble-0" class="speech-bubble"></div>
+      <!-- East -->
+      <div id="bubble-1" class="speech-bubble"></div>
+      <!-- North -->
+      <div id="bubble-2" class="speech-bubble"></div>
+      <!-- West -->
+      <div id="bubble-3" class="speech-bubble"></div>
+      <!-- South -->
     </div>
+
+    <!-- 오디오 리소스 (sound 폴더에 파일을 넣어주세요) -->
+    <div style="display: none">
+      <audio id="sfx-card" src="./sound/card.mp3"></audio>
+      <audio id="sfx-gun" src="./sound/gun.mp3"></audio>
+      <audio id="sfx-click" src="./sound/click.mp3"></audio>
+      <audio id="sfx-select" src="./sound/select.mp3"></audio>
+      <audio id="sfx-heartbeat" src="./sound/heartbeat.mp3" loop></audio>
+      <audio id="bgm-main" src="./sound/bgm.mp3" loop></audio>
+      <audio id="bgm-roulette" src="./sound/roulette.mp3" loop></audio>
+    </div>
+
+    <!-- 카드 이미지 리소스 (화면에 보이지 않음) -->
+    <!-- src 경로를 실제 파일 위치에 맞게 수정해주세요 -->
+    <div style="display: none">
+      <img id="img-K" src="./pokercard/킹카드 스페이드.jpg" alt="King" />
+      <img id="img-Q" src="./pokercard/퀸카드 스페이드.jpg" alt="Queen" />
+      <img id="img-J" src="./pokercard/조커카드.jpg" alt="Joker" />
+      <img id="img-S" src="./pokercard/스페이드 카드.png" alt="Spade" />
+      <img id="img-back" src="./pokercard/포커카드 뒷면.jpg" alt="Back" />
+    </div>
+
     <script src="liars-roulette.js"></script>
   </body>
 </html>
