@@ -424,6 +424,9 @@ function draw() {
     drawBackCard(mc.x, mc.y, mc.angle, 0, 0);
   }
 
+  // 10. 애니메이션 업데이트 및 그리기 (카드 제출 등)
+  updateAndDrawAnimations();
+
   // 8. 테이블 중앙에 쌓인 카드 그리기
   gameState.tableCards.forEach((card, i) => {
     if (card.faceUp) {
@@ -787,8 +790,55 @@ function updateAndDrawAnimations() {
       const curAngle =
         anim.startAngle + (anim.targetAngle - anim.startAngle) * anim.progress;
 
-      // 카드 그리기 (뒷면)
-      drawBackCard(curX, curY, curAngle, 0, 0, 1);
+      // 플레이어 1(index 3)은 카드를 뒤집으면서 냄 (앞면 -> 뒷면)
+      let scaleX = 1;
+      let isBack = true;
+
+      if (anim.playerIndex === 3) {
+        if (anim.progress < 0.5) {
+          isBack = false; // 절반 전까지는 앞면
+          scaleX = 1 - anim.progress * 2; // 1 -> 0
+        } else {
+          isBack = true; // 절반 이후는 뒷면
+          scaleX = (anim.progress - 0.5) * 2; // 0 -> 1
+        }
+      }
+
+      // 잔상 효과 (Trail)
+      if (!anim.trail) anim.trail = [];
+      anim.trail.push({
+        x: curX,
+        y: curY,
+        angle: curAngle,
+        scaleX: scaleX,
+        isBack: isBack,
+      });
+      if (anim.trail.length > 5) anim.trail.shift(); // 잔상 길이 제한
+
+      anim.trail.forEach((pos, idx) => {
+        ctx.globalAlpha = (idx / anim.trail.length) * 0.3; // 뒤로 갈수록 투명하게
+        if (pos.isBack) {
+          drawBackCard(pos.x, pos.y, pos.angle, 0, 0, pos.scaleX);
+        } else {
+          drawFrontCard(
+            pos.x,
+            pos.y,
+            pos.angle,
+            anim.cardType,
+            0,
+            0,
+            pos.scaleX,
+          );
+        }
+      });
+      ctx.globalAlpha = 1.0;
+
+      // 현재 카드 그리기
+      if (isBack) {
+        drawBackCard(curX, curY, curAngle, 0, 0, scaleX);
+      } else {
+        drawFrontCard(curX, curY, curAngle, anim.cardType, 0, 0, scaleX);
+      }
     }
   }
 }
@@ -893,17 +943,27 @@ function submitCards(playerIndex, cardIndices) {
     // 카드 소리 재생
     playSound("card");
 
+    // 약간의 랜덤 오차 추가 (자연스럽게 쌓이도록)
+    const targetX = targetBaseX + (Math.random() - 0.5) * 30;
+    const targetY = targetBaseY + (Math.random() - 0.5) * 30;
+    const targetAngle = targetBaseAngle + (Math.random() - 0.5) * 0.4;
+
     // 애니메이션 추가
     animations.push({
       startX: player.x,
       startY: player.y,
-      targetX: centerX,
-      targetY: tableY - 40,
+      targetX: targetX, // 계산된 목표 위치 사용
+      targetY: targetY,
       startAngle: player.angle,
-      targetAngle: (Math.random() - 0.5) * 0.5, // 랜덤 회전
+      targetAngle: targetAngle,
       progress: 0,
       speed: 0.25, // 카드 이동 속도 증가 (0.1 -> 0.25)
+      playerIndex: playerIndex, // 뒤집기 효과를 위해 추가
+      cardType: card.type, // 앞면 그리기를 위해 추가
       onComplete: () => {
+        card.x = targetX; // 카드의 최종 위치 저장
+        card.y = targetY;
+        card.angle = targetAngle;
         gameState.tableCards.push(card);
       },
     });
