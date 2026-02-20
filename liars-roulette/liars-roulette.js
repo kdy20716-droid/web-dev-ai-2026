@@ -1,6 +1,13 @@
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
+// Web Audio API Context (사운드 생성을 위한 객체)
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+// 마스터 볼륨 노드 생성
+const masterGain = audioCtx.createGain();
+masterGain.connect(audioCtx.destination);
+masterGain.gain.value = 0.5; // 초기 볼륨 50%
+
 // 캔버스 크기 설정
 canvas.width = 1024;
 canvas.height = 900;
@@ -18,6 +25,9 @@ for (let i = 0; i < 50; i++) {
     changeAlpha: (Math.random() - 0.5) * 0.01,
   });
 }
+
+// 폭죽 입자 관리
+const fireworks = [];
 
 // 게임 상태 및 플레이어 설정
 const centerX = canvas.width / 2;
@@ -68,18 +78,27 @@ const players = [
 ];
 
 // 카드 덱 생성 및 셔플
-const cardTypes = [
-  ...Array(6).fill("K"), // King
-  ...Array(6).fill("Q"), // Queen
-  ...Array(6).fill("S"), // Spade
-  ...Array(2).fill("J"), // Joker
-];
-
-// Fisher-Yates Shuffle
-for (let i = cardTypes.length - 1; i > 0; i--) {
-  const j = Math.floor(Math.random() * (i + 1));
-  [cardTypes[i], cardTypes[j]] = [cardTypes[j], cardTypes[i]];
+function createDeck() {
+  const types = [
+    ...Array(6).fill("K"), // King
+    ...Array(6).fill("Q"), // Queen
+    ...Array(6).fill("S"), // Spade
+  ];
+  if (Math.random() < 0.2) {
+    types.push("D", "D");
+    console.log("Devil cards added to deck!");
+  } else {
+    types.push("J", "J");
+  }
+  // Fisher-Yates Shuffle
+  for (let i = types.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [types[i], types[j]] = [types[j], types[i]];
+  }
+  return types;
 }
+
+let cardTypes = createDeck();
 
 // 카드 이미지 로드 (HTML에 있는 img 태그 가져오기)
 const cardImages = {};
@@ -87,8 +106,11 @@ const imgIds = {
   K: "img-K",
   Q: "img-Q",
   J: "img-J",
+  D: "img-D",
   S: "img-S",
   BACK: "img-back",
+  REVOLVER: "img-revolver",
+  FIST: "img-fist",
 };
 
 for (const [key, id] of Object.entries(imgIds)) {
@@ -98,7 +120,7 @@ for (const [key, id] of Object.entries(imgIds)) {
     // 로드 상태 확인용 로그
     img.onload = () => console.log(`이미지 로드 성공: ${id}`);
     img.onerror = () =>
-      console.error(`이미지 로드 실패: ${id} (경로 확인 필요)`);
+      console.warn(`이미지 로드 실패: ${id} (경로 확인 필요)`);
   }
 }
 
@@ -114,12 +136,248 @@ let dealingState = {
 // 애니메이션 관리 (카드 제출 등)
 const animations = [];
 
-// 오디오 및 말풍선 관리 함수
+// 주먹 내리치기 애니메이션 상태
+let slamState = {
+  active: false,
+  playerIndex: -1,
+  progress: 0,
+};
+
+// --- 사운드 생성 시스템 (Web Audio API) ---
+const SoundGen = {
+  // 노이즈 버퍼 생성 (재사용)
+  createNoiseBuffer: function () {
+    if (this.noiseBuffer) return this.noiseBuffer;
+    const bufferSize = audioCtx.sampleRate * 2; // 2초 분량
+    const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      data[i] = Math.random() * 2 - 1;
+    }
+    this.noiseBuffer = buffer;
+    return buffer;
+  },
+
+  // 총소리 (Bang!)
+  gun: function () {
+    const t = audioCtx.currentTime;
+    // 1. 폭발음 (Noise)
+    const noise = audioCtx.createBufferSource();
+    noise.buffer = this.createNoiseBuffer();
+    const noiseFilter = audioCtx.createBiquadFilter();
+    noiseFilter.type = "lowpass";
+    noiseFilter.frequency.setValueAtTime(1000, t);
+    noiseFilter.frequency.exponentialRampToValueAtTime(100, t + 0.5);
+    const noiseGain = audioCtx.createGain();
+    noiseGain.gain.setValueAtTime(1, t);
+    noiseGain.gain.exponentialRampToValueAtTime(0.01, t + 0.5);
+    noise.connect(noiseFilter);
+    noiseFilter.connect(noiseGain);
+    noiseGain.connect(masterGain);
+    noise.start(t);
+    noise.stop(t + 0.5);
+
+    // 2. 타격감 (Kick)
+    const osc = audioCtx.createOscillator();
+    osc.type = "triangle";
+    osc.frequency.setValueAtTime(150, t);
+    osc.frequency.exponentialRampToValueAtTime(0.01, t + 0.5);
+    const oscGain = audioCtx.createGain();
+    oscGain.gain.setValueAtTime(1, t);
+    oscGain.gain.exponentialRampToValueAtTime(0.01, t + 0.5);
+    osc.connect(oscGain);
+    oscGain.connect(masterGain);
+    osc.start(t);
+    osc.stop(t + 0.5);
+  },
+
+  // 빈 총 소리 (Click)
+  click: function () {
+    const t = audioCtx.currentTime;
+
+    // 1. 날카로운 금속음 (High-pass filtered noise)
+    const noise = audioCtx.createBufferSource();
+    noise.buffer = this.createNoiseBuffer();
+
+    const noiseFilter = audioCtx.createBiquadFilter();
+    noiseFilter.type = "highpass";
+    noiseFilter.frequency.setValueAtTime(1500, t); // 1.5kHz 이상 대역
+
+    const noiseGain = audioCtx.createGain();
+    noiseGain.gain.setValueAtTime(1.2, t); // 강한 어택
+    noiseGain.gain.exponentialRampToValueAtTime(0.01, t + 0.1); // 짧은 여운
+
+    noise.connect(noiseFilter);
+    noiseFilter.connect(noiseGain);
+    noiseGain.connect(masterGain);
+
+    noise.start(t);
+    noise.stop(t + 0.1);
+
+    // 2. 기계적 타격음 (Impulse)
+    const osc = audioCtx.createOscillator();
+    osc.type = "triangle";
+    osc.frequency.setValueAtTime(300, t);
+
+    const oscGain = audioCtx.createGain();
+    oscGain.gain.setValueAtTime(0.8, t);
+    oscGain.gain.exponentialRampToValueAtTime(0.01, t + 0.05);
+
+    osc.connect(oscGain);
+    oscGain.connect(masterGain);
+
+    osc.start(t);
+    osc.stop(t + 0.05);
+  },
+
+  // 카드 소리 (쓱-)
+  card: function () {
+    const t = audioCtx.currentTime;
+    const noise = audioCtx.createBufferSource();
+    noise.buffer = this.createNoiseBuffer();
+    const filter = audioCtx.createBiquadFilter();
+    filter.type = "bandpass";
+    filter.frequency.setValueAtTime(800, t);
+    filter.frequency.linearRampToValueAtTime(1200, t + 0.1);
+    const gain = audioCtx.createGain();
+    gain.gain.setValueAtTime(0.2, t);
+    gain.gain.linearRampToValueAtTime(0, t + 0.1);
+    noise.connect(filter);
+    filter.connect(gain);
+    gain.connect(masterGain);
+    noise.start(t);
+    noise.stop(t + 0.1);
+  },
+
+  // 딜링 소리 (착!)
+  deal: function () {
+    const t = audioCtx.currentTime;
+    const noise = audioCtx.createBufferSource();
+    noise.buffer = this.createNoiseBuffer();
+    const gain = audioCtx.createGain();
+    gain.gain.setValueAtTime(0.3, t);
+    gain.gain.exponentialRampToValueAtTime(0.01, t + 0.05);
+    noise.connect(gain);
+    gain.connect(masterGain);
+    noise.start(t);
+    noise.stop(t + 0.05);
+  },
+
+  // 선택 소리 (뾱)
+  select: function () {
+    const t = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(600, t);
+    const gain = audioCtx.createGain();
+    gain.gain.setValueAtTime(0.1, t);
+    gain.gain.exponentialRampToValueAtTime(0.01, t + 0.05);
+    osc.connect(gain);
+    gain.connect(masterGain);
+    osc.start(t);
+    osc.stop(t + 0.05);
+  },
+
+  // 드라마틱 효과음 (두둥!)
+  drama: function () {
+    const t = audioCtx.currentTime;
+    // Impact 1
+    this.playLowImpact(t);
+    // Impact 2
+    this.playLowImpact(t + 0.2);
+  },
+
+  playLowImpact: function (t) {
+    const osc = audioCtx.createOscillator();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(80, t);
+    osc.frequency.exponentialRampToValueAtTime(10, t + 0.8);
+    const gain = audioCtx.createGain();
+    gain.gain.setValueAtTime(0.8, t);
+    gain.gain.exponentialRampToValueAtTime(0.01, t + 0.8);
+    osc.connect(gain);
+    gain.connect(masterGain);
+    osc.start(t);
+    osc.stop(t + 0.8);
+  },
+
+  // 심장박동 (쿵... 쿵...)
+  heartbeat: function () {
+    const t = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(50, t);
+    osc.frequency.exponentialRampToValueAtTime(40, t + 0.1);
+    const gain = audioCtx.createGain();
+    gain.gain.setValueAtTime(0.8, t);
+    gain.gain.exponentialRampToValueAtTime(0.01, t + 0.15);
+    osc.connect(gain);
+    gain.connect(masterGain);
+    osc.start(t);
+    osc.stop(t + 0.2);
+  },
+
+  // 환호/팡파레 (승리 시)
+  cheer: function () {
+    const t = audioCtx.currentTime;
+
+    // 1. 팡파레 (Major Chord Arpeggio)
+    const notes = [523.25, 659.25, 783.99, 1046.5]; // C5, E5, G5, C6
+    notes.forEach((freq, i) => {
+      const osc = audioCtx.createOscillator();
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(freq, t + i * 0.15);
+
+      const gain = audioCtx.createGain();
+      gain.gain.setValueAtTime(0.1, t + i * 0.15);
+      gain.gain.exponentialRampToValueAtTime(0.01, t + i * 0.15 + 1.0);
+
+      osc.connect(gain);
+      gain.connect(masterGain);
+      osc.start(t + i * 0.15);
+      osc.stop(t + i * 0.15 + 1.0);
+    });
+
+    // 2. 박수 갈채 (Noise bursts)
+    const noise = audioCtx.createBufferSource();
+    noise.buffer = this.createNoiseBuffer();
+    const noiseFilter = audioCtx.createBiquadFilter();
+    noiseFilter.type = "lowpass";
+    noiseFilter.frequency.value = 1000;
+
+    const noiseGain = audioCtx.createGain();
+    noiseGain.gain.setValueAtTime(0.3, t);
+    noiseGain.gain.exponentialRampToValueAtTime(0.01, t + 2.5);
+
+    noise.connect(noiseFilter);
+    noiseFilter.connect(noiseGain);
+    noiseGain.connect(masterGain);
+    noise.start(t);
+    noise.stop(t + 2.5);
+  },
+};
+
 function playSound(type) {
-  const audio = document.getElementById(`sfx-${type}`);
-  if (audio) {
-    audio.currentTime = 0;
-    audio.play().catch((e) => console.log("Audio play failed:", e));
+  if (audioCtx.state === "suspended") {
+    audioCtx.resume();
+  }
+
+  // 볼륨 슬라이더 값 가져오기
+  const slider = document.getElementById("volume-slider");
+  const vol = slider ? parseFloat(slider.value) : 0.5;
+
+  // 1. HTML Audio 태그 확인 (파일 재생: 철컥, 착!, 탕!)
+  const audioEl = document.getElementById(`sfx-${type}`);
+  if (audioEl) {
+    audioEl.volume = vol; // 볼륨 적용
+    audioEl.currentTime = 0;
+    audioEl.play().catch((e) => console.log("Audio play failed:", e));
+    return;
+  }
+
+  // 2. Web Audio API 생성 (기존 로직: 카드 소리 등)
+  if (SoundGen[type]) {
+    SoundGen[type]();
   }
 }
 
@@ -139,20 +397,30 @@ function playBGM(type) {
   const mainBgm = document.getElementById("bgm-main");
   const rouletteBgm = document.getElementById("bgm-roulette");
 
+  // 현재 볼륨 설정 (슬라이더 값 기준)
+  const slider = document.getElementById("volume-slider");
+  const vol = slider ? parseFloat(slider.value) : 0.5;
+  const bgmVol = vol * 0.1; // 배경음악 볼륨을 효과음 대비 10%로 설정
+
   if (type === "main") {
     if (rouletteBgm) {
       rouletteBgm.pause();
       rouletteBgm.currentTime = 0;
     }
-    if (mainBgm && mainBgm.paused) {
-      mainBgm.volume = 0.3;
-      mainBgm.play().catch(() => {});
+    if (mainBgm) {
+      mainBgm.volume = vol;
+      mainBgm.volume = bgmVol;
+      if (mainBgm.paused) mainBgm.play().catch(() => {});
     }
   } else if (type === "roulette") {
-    if (mainBgm) mainBgm.pause();
+    if (mainBgm) {
+      mainBgm.pause();
+      // mainBgm.currentTime = 0; // 메인 BGM 초기화 제거 (이어서 재생하기 위해)
+    }
     if (rouletteBgm) {
-      rouletteBgm.volume = 0.4;
-      rouletteBgm.play().catch(() => {});
+      rouletteBgm.volume = vol;
+      rouletteBgm.volume = bgmVol;
+      if (rouletteBgm.paused) rouletteBgm.play().catch(() => {});
     }
   }
 }
@@ -175,6 +443,10 @@ const gameState = {
   lighting: "NORMAL", // NORMAL, DIM, RED_FLASH, FLICKER
   lightingTimer: 0, // 조명 효과 타이머
   turnCount: 0, // 턴 진행 횟수 (도전 확률 증가용)
+  victimIndices: [], // 룰렛 대상 플레이어 인덱스 목록 (배열)
+  bloodSplatters: [], // 피자국 데이터 {x, y, points, color, scaleX, scaleY, rotation}
+  rouletteQueue: [], // 데빌 카드 발동 시 룰렛 대기열
+  rouletteStartTime: 0, // 룰렛 애니메이션 시작 시간
 };
 
 function draw() {
@@ -211,6 +483,34 @@ function draw() {
       const intensity = gameState.lightingTimer / 60;
       floorColor = `rgb(${Math.floor(80 * intensity)}, 0, 0)`;
       lightColor = `rgba(255, 0, 0, ${0.6 * intensity})`;
+
+      // 초기 5프레임 동안 강력한 화이트 플래시 (총구 화염 느낌)
+      if (gameState.lightingTimer > 55) {
+        ctx.fillStyle = `rgba(255, 255, 255, ${(gameState.lightingTimer - 55) / 5})`;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
+
+      // 발사 시 해당 플레이어 방향 모서리 섬광 효과
+      if (gameState.victimIndices.length > 0) {
+        // 여러 명일 경우 첫 번째 피해자 기준으로 하거나, 화면 전체 효과로 처리
+        // 여기서는 첫 번째 피해자 위치 사용 (또는 반복문으로 처리 가능하지만 성능 고려하여 단순화)
+        const victim = players[gameState.victimIndices[0]];
+        const flashGradient = ctx.createRadialGradient(
+          victim.x,
+          victim.y,
+          10,
+          victim.x,
+          victim.y,
+          600,
+        );
+        flashGradient.addColorStop(
+          0,
+          `rgba(255, 255, 200, ${0.9 * intensity})`,
+        ); // 중심부 흰색/노란색
+        flashGradient.addColorStop(1, "rgba(255, 0, 0, 0)");
+        ctx.fillStyle = flashGradient;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
     } else {
       gameState.lighting = "NORMAL";
     }
@@ -318,7 +618,52 @@ function draw() {
   ctx.ellipse(centerX, tableY, 400, 220, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  // 4. 테이블 테두리
+  // 3.5 피자국 그리기 (테이블 상판에 클리핑 & 합성)
+  ctx.save();
+  // 테이블 영역으로 클리핑 (테이블 밖으로 나가지 않게)
+  ctx.beginPath();
+  ctx.ellipse(centerX, tableY, 400, 220, 0, 0, Math.PI * 2);
+  ctx.clip();
+
+  // 나무 질감에 스며든 느낌 (Multiply 블렌딩)
+  ctx.globalCompositeOperation = "multiply";
+
+  gameState.bloodSplatters.forEach((splat) => {
+    ctx.save();
+    ctx.translate(splat.x, splat.y);
+    ctx.rotate(splat.rotation);
+    ctx.scale(splat.scaleX, splat.scaleY);
+    ctx.fillStyle = splat.color;
+
+    // 불규칙한 액체 모양 그리기
+    ctx.beginPath();
+    if (splat.points && splat.points.length > 0) {
+      ctx.moveTo(splat.points[0].x, splat.points[0].y);
+      for (let i = 1; i < splat.points.length; i++) {
+        // 부드러운 곡선으로 연결
+        const p = splat.points[i];
+        const prev = splat.points[i - 1];
+        const cpX = (prev.x + p.x) / 2;
+        const cpY = (prev.y + p.y) / 2;
+        ctx.quadraticCurveTo(prev.x, prev.y, cpX, cpY);
+      }
+      // 마지막 점과 첫 점 연결
+      const last = splat.points[splat.points.length - 1];
+      const first = splat.points[0];
+      const cpX = (last.x + first.x) / 2;
+      const cpY = (last.y + first.y) / 2;
+      ctx.quadraticCurveTo(last.x, last.y, cpX, cpY);
+      ctx.quadraticCurveTo(cpX, cpY, first.x, first.y);
+    } else {
+      // 데이터가 없으면 원형 (fallback)
+      ctx.arc(0, 0, splat.radius || 10, 0, Math.PI * 2);
+    }
+    ctx.fill();
+    ctx.restore();
+  });
+  ctx.restore();
+
+  // 4. 테이블 테두리 (피자국 위에 그려짐)
   ctx.strokeStyle = "#3e2723";
   ctx.lineWidth = 15;
   ctx.stroke();
@@ -330,93 +675,98 @@ function draw() {
     drawCardDeck(centerX, tableY - 40);
   }
 
+  // 5.5 리볼버 그리기 (각 플레이어 앞)
+  drawPlayerRevolvers();
+
   // 6. 플레이어 손패 그리기
-  players.forEach((player) => {
-    const selectedCount = player.hand.filter((c) => c.isSelected).length;
-    const isMaxSelected = selectedCount >= 3;
+  if (gameState.phase !== "ROULETTE") {
+    players.forEach((player) => {
+      const selectedCount = player.hand.filter((c) => c.isSelected).length;
+      const isMaxSelected = selectedCount >= 3;
 
-    // 남쪽 플레이어(내 카드)이고 딜링이 끝났으면 카드 간격 넓히기
-    if (player.name === "South" && !dealingState.isDealing) {
-      // 목표 간격 90, 부드럽게 이동
-      player.spacing += (90 - player.spacing) * 0.1;
-    }
+      // 남쪽 플레이어(내 카드)이고 딜링이 끝났으면 카드 간격 넓히기
+      if (player.name === "South" && !dealingState.isDealing) {
+        // 목표 간격 90, 부드럽게 이동
+        player.spacing += (90 - player.spacing) * 0.1;
+      }
 
-    // 사망 시 X 표시
-    if (player.isDead) {
-      ctx.save();
-      ctx.translate(player.x, player.y);
-      ctx.strokeStyle = "#c62828";
-      ctx.lineWidth = 10;
-      ctx.beginPath();
-      ctx.moveTo(-40, -40);
-      ctx.lineTo(40, 40);
-      ctx.moveTo(40, -40);
-      ctx.lineTo(-40, 40);
-      ctx.stroke();
-      ctx.restore();
-    }
+      // 사망 시 X 표시
+      if (player.isDead) {
+        ctx.save();
+        ctx.translate(player.x, player.y);
+        ctx.strokeStyle = "#c62828";
+        ctx.lineWidth = 10;
+        ctx.beginPath();
+        ctx.moveTo(-40, -40);
+        ctx.lineTo(40, 40);
+        ctx.moveTo(40, -40);
+        ctx.lineTo(-40, 40);
+        ctx.stroke();
+        ctx.restore();
+      }
 
-    player.hand.forEach((card, index) => {
-      // 카드를 겹쳐서 배치
-      const offsetX = (index - (player.hand.length - 1) / 2) * player.spacing;
+      player.hand.forEach((card, index) => {
+        // 카드를 겹쳐서 배치
+        const offsetX = (index - (player.hand.length - 1) / 2) * player.spacing;
 
-      // 선택된 카드 위로 띄우기 (플레이어만)
-      const offsetY = card.isSelected ? -30 : 0;
+        // 선택된 카드 위로 띄우기 (플레이어만)
+        const offsetY = card.isSelected ? -30 : 0;
 
-      // 뒤집기 애니메이션 처리
-      let scaleX = 1;
-      let isBack = !card.faceUp;
+        // 뒤집기 애니메이션 처리
+        let scaleX = 1;
+        let isBack = !card.faceUp;
 
-      if (card.isFlipping) {
-        card.flipProgress += 0.05;
-        if (card.flipProgress >= 1) {
-          card.flipProgress = 1;
-          card.isFlipping = false;
-          card.faceUp = true;
+        if (card.isFlipping) {
+          card.flipProgress += 0.05;
+          if (card.flipProgress >= 1) {
+            card.flipProgress = 1;
+            card.isFlipping = false;
+            card.faceUp = true;
+          }
+          // 0~0.5: 뒷면 줄어듦, 0.5~1: 앞면 늘어남
+          if (card.flipProgress < 0.5) {
+            scaleX = 1 - card.flipProgress * 2;
+            isBack = true;
+          } else {
+            scaleX = (card.flipProgress - 0.5) * 2;
+            isBack = false;
+          }
         }
-        // 0~0.5: 뒷면 줄어듦, 0.5~1: 앞면 늘어남
-        if (card.flipProgress < 0.5) {
-          scaleX = 1 - card.flipProgress * 2;
-          isBack = true;
+
+        // 3장 선택 시 나머지 카드 비활성화 효과 (투명도 조절)
+        if (player.name === "South" && isMaxSelected && !card.isSelected) {
+          ctx.globalAlpha = 0.5;
         } else {
-          scaleX = (card.flipProgress - 0.5) * 2;
-          isBack = false;
+          ctx.globalAlpha = 1.0;
         }
-      }
 
-      // 3장 선택 시 나머지 카드 비활성화 효과 (투명도 조절)
-      if (player.name === "South" && isMaxSelected && !card.isSelected) {
-        ctx.globalAlpha = 0.5;
-      } else {
+        if (isBack) {
+          drawBackCard(
+            player.x,
+            player.y,
+            player.angle,
+            offsetX,
+            offsetY,
+            scaleX,
+            card.isSelected,
+          );
+        } else {
+          drawFrontCard(
+            player.x,
+            player.y,
+            player.angle,
+            card.type,
+            offsetX,
+            offsetY,
+            scaleX,
+            card.isSelected,
+          );
+        }
+        // 투명도 초기화
         ctx.globalAlpha = 1.0;
-      }
-
-      if (isBack) {
-        drawBackCard(
-          player.x,
-          player.y,
-          player.angle,
-          offsetX,
-          offsetY,
-          scaleX,
-          card.isSelected,
-        );
-      } else {
-        drawFrontCard(
-          player.x,
-          player.y,
-          player.angle,
-          card.type,
-          offsetX,
-          offsetY,
-          scaleX,
-          card.isSelected,
-        );
-      }
-      // 투명도 초기화
-      ctx.globalAlpha = 1.0;
+      });
     });
-  });
+  }
 
   // 7. 이동 중인 카드 그리기
   if (dealingState.movingCard) {
@@ -427,19 +777,29 @@ function draw() {
   // 10. 애니메이션 업데이트 및 그리기 (카드 제출 등)
   updateAndDrawAnimations();
 
+  // 10.5 주먹 내리치기 효과 (가장 위에 표시)
+  if (slamState.active) {
+    updateAndDrawSlam();
+  }
+
   // 8. 테이블 중앙에 쌓인 카드 그리기
-  gameState.tableCards.forEach((card, i) => {
-    if (card.faceUp) {
-      drawFrontCard(card.x, card.y, card.angle, card.type, 0, 0, 1);
-    } else {
-      drawBackCard(card.x, card.y, card.angle, 0, 0, 1);
-    }
-  });
+  if (gameState.phase !== "ROULETTE") {
+    gameState.tableCards.forEach((card, i) => {
+      if (card.faceUp) {
+        drawFrontCard(card.x, card.y, card.angle, card.type, 0, 0, 1);
+      } else {
+        drawBackCard(card.x, card.y, card.angle, 0, 0, 1);
+      }
+    });
+  }
 
   ctx.restore(); // 흔들림 효과 끝
 
   // 6. 먼지 입자 애니메이션
   updateAndDrawParticles();
+
+  // 7. 폭죽 애니메이션
+  updateAndDrawFireworks();
 
   requestAnimationFrame(draw);
 }
@@ -448,8 +808,11 @@ function updateDealing() {
   // 이동 중인 카드가 없다면 새 카드를 발사
   if (!dealingState.movingCard) {
     if (dealingState.dealtCount < dealingState.totalCards) {
-      const playerIndex = dealingState.dealtCount % 4; // 동 -> 북 -> 서 -> 남 순서
-      const targetPlayer = players[playerIndex];
+      // 살아있는 플레이어에게만 배분
+      const survivors = players.filter((p) => !p.isDead);
+      const targetPlayer =
+        survivors[dealingState.dealtCount % survivors.length];
+      const playerIndex = players.indexOf(targetPlayer); // 실제 플레이어 배열의 인덱스 찾기
 
       dealingState.movingCard = {
         startX: centerX,
@@ -464,12 +827,14 @@ function updateDealing() {
         progress: 0,
         playerIndex: playerIndex,
       };
+
+      // 카드 나눠주는 소리
+      playSound("deal");
     } else {
       dealingState.isDealing = false;
       gameState.phase = "PLAYING";
 
       document.getElementById("game-hud").classList.remove("hidden");
-      showMessage(`Target: ${gameState.currentRank}`, 120);
       updateTargetDisplay();
       setTimeout(() => {
         updateGameStatus();
@@ -556,6 +921,47 @@ function updateAndDrawParticles() {
     ctx.fill();
   });
   ctx.globalAlpha = 1.0; // 투명도 초기화
+}
+
+function createFirework(x, y) {
+  const particleCount = 80;
+  const color = `hsl(${Math.random() * 360}, 100%, 60%)`;
+  for (let i = 0; i < particleCount; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = Math.random() * 4 + 2;
+    fireworks.push({
+      x: x,
+      y: y,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      alpha: 1,
+      color: color,
+      gravity: 0.08,
+      decay: Math.random() * 0.015 + 0.005,
+    });
+  }
+}
+
+function updateAndDrawFireworks() {
+  for (let i = fireworks.length - 1; i >= 0; i--) {
+    const p = fireworks[i];
+    p.x += p.vx;
+    p.y += p.vy;
+    p.vy += p.gravity;
+    p.alpha -= p.decay;
+
+    if (p.alpha <= 0) {
+      fireworks.splice(i, 1);
+      continue;
+    }
+
+    ctx.globalAlpha = p.alpha;
+    ctx.fillStyle = p.color;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1.0;
 }
 
 // 단일 카드 뒷면 그리기 (이동 및 손패용)
@@ -843,6 +1249,279 @@ function updateAndDrawAnimations() {
   }
 }
 
+// 각 플레이어의 리볼버 그리기 함수
+function drawPlayerRevolvers() {
+  players.forEach((player, index) => {
+    ctx.save();
+    ctx.translate(player.x, player.y);
+    ctx.rotate(player.angle);
+
+    // 기본 위치: 플레이어 오른쪽(x+) 앞(y-) 테이블 위
+    const restX = 130;
+    const restY = -150;
+    const restRotation = -Math.PI / 2 + 0.2;
+
+    let currentX = restX;
+    let currentY = restY;
+    let currentRotation = restRotation;
+
+    // 룰렛 단계이고 피해자인 경우: 자기 자신을 향해 조준
+    if (
+      gameState.phase === "ROULETTE" &&
+      gameState.victimIndices.includes(index)
+    ) {
+      // 목표 위치 (머리/중심 쪽)
+      const aimX = 60;
+      const aimY = -80;
+      let aimRotation = Math.atan2(-aimY, -aimX);
+
+      // 회전 방향을 반대로 (최단 경로로) 수정
+      if (aimRotation - restRotation > Math.PI) {
+        aimRotation -= Math.PI * 2;
+      } else if (aimRotation - restRotation < -Math.PI) {
+        aimRotation += Math.PI * 2;
+      }
+
+      // 진행률 계산 (5초 동안 천천히 이동)
+      const elapsed = Date.now() - gameState.rouletteStartTime;
+      const duration = 5000;
+      let progress = Math.min(elapsed / duration, 1);
+
+      // Easing (Cubic Ease Out) - 부드럽게 도착
+      const ease = 1 - Math.pow(1 - progress, 3);
+
+      // 위치 및 회전 보간
+      currentX = restX + (aimX - restX) * ease;
+      currentY = restY + (aimY - restY) * ease;
+      currentRotation = restRotation + (aimRotation - restRotation) * ease;
+
+      // 공포로 인한 떨림 효과 (조준이 거의 완료되었을 때 시작)
+      if (progress > 0.8) {
+        currentX += (Math.random() - 0.5) * 3;
+        currentY += (Math.random() - 0.5) * 3;
+      }
+    }
+
+    ctx.translate(currentX, currentY);
+    ctx.rotate(currentRotation);
+
+    const scale = 0.9;
+    ctx.scale(scale, scale);
+
+    // 그림자
+    ctx.fillStyle = "rgba(0, 0, 0, 0.3)";
+    ctx.beginPath();
+    ctx.ellipse(0, 20, 60, 20, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    const w = 100;
+    const h = 60;
+
+    // 색상 정의
+    const metalColor = "#546e7a"; // 청회색 금속
+    const gripColor = "#5d4037"; // 갈색 나무
+    const darkMetal = "#263238"; // 어두운 금속
+
+    if (
+      cardImages.REVOLVER &&
+      cardImages.REVOLVER.complete &&
+      cardImages.REVOLVER.naturalWidth > 0
+    ) {
+      ctx.drawImage(cardImages.REVOLVER, -w / 2, -h / 2, w, h);
+    } else {
+      // 대체 도형 (옆모습 형상화)
+      // 1. 손잡이 (Grip)
+      ctx.fillStyle = gripColor;
+      ctx.beginPath();
+      ctx.moveTo(-40, 10);
+      ctx.quadraticCurveTo(-55, 30, -50, 50);
+      ctx.lineTo(-30, 50);
+      ctx.quadraticCurveTo(-25, 30, -20, 20);
+      ctx.lineTo(-40, 10);
+      ctx.fill();
+
+      // 손잡이 나사
+      ctx.fillStyle = "#3e2723";
+      ctx.beginPath();
+      ctx.arc(-40, 30, 3, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 2. 프레임 (Frame)
+      ctx.fillStyle = metalColor;
+      ctx.beginPath();
+      ctx.moveTo(-40, 10);
+      ctx.lineTo(20, 10);
+      ctx.lineTo(20, 35);
+      ctx.lineTo(-20, 35);
+      ctx.lineTo(-40, 20);
+      ctx.fill();
+
+      // 3. 실린더 (Cylinder)
+      ctx.fillStyle = darkMetal;
+      ctx.fillRect(-15, 5, 35, 25);
+      ctx.fillStyle = "#37474f";
+      ctx.fillRect(-10, 8, 25, 6);
+      ctx.fillRect(-10, 20, 25, 6);
+
+      // 4. 총열 (Barrel)
+      ctx.fillStyle = metalColor;
+      ctx.fillRect(20, 5, 60, 12);
+      ctx.fillStyle = "#455a64";
+      ctx.fillRect(20, 5, 60, 3);
+      ctx.fillStyle = darkMetal; // 가늠쇠
+      ctx.beginPath();
+      ctx.moveTo(75, 5);
+      ctx.lineTo(80, 5);
+      ctx.lineTo(80, -2);
+      ctx.lineTo(75, 5);
+      ctx.fill();
+
+      // 5. 방아쇠 울 및 방아쇠
+      ctx.strokeStyle = metalColor;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(-15, 35);
+      ctx.quadraticCurveTo(-5, 50, 15, 35);
+      ctx.stroke();
+      ctx.fillStyle = "#212121";
+      ctx.beginPath();
+      ctx.moveTo(-5, 35);
+      ctx.quadraticCurveTo(0, 42, 5, 35);
+      ctx.fill();
+
+      // 6. 공이치기 (Hammer)
+      ctx.fillStyle = darkMetal;
+      ctx.beginPath();
+      ctx.moveTo(-40, 10);
+      ctx.quadraticCurveTo(-45, 5, -42, 0);
+      ctx.lineTo(-35, 10);
+      ctx.fill();
+    }
+
+    ctx.restore();
+  });
+}
+
+// 주먹 내리치기 업데이트 및 그리기
+function updateAndDrawSlam() {
+  slamState.progress += 0.08; // 애니메이션 속도
+
+  if (slamState.progress >= 1) {
+    slamState.active = false;
+    return;
+  }
+
+  const player = players[slamState.playerIndex];
+  let scale = 1;
+  let alpha = 1;
+  const yOffset = -180; // 테이블 위 위치 (플레이어 앞)
+  const xOffset = 60; // 오른쪽으로 살짝 이동
+
+  // 애니메이션: 내려치기(확대->축소) -> 유지 -> 사라짐
+  if (slamState.progress < 0.3) {
+    // 임팩트 전: 큼지막하게 시작해서 작아짐 (내려찍는 느낌)
+    const t = slamState.progress / 0.3;
+    scale = 2.5 - t * 1.5; // 2.5 -> 1.0
+    alpha = Math.min(1, t * 3); // 빠르게 불투명해짐
+  } else if (slamState.progress > 0.7) {
+    // 사라짐
+    alpha = 1 - (slamState.progress - 0.7) / 0.3;
+  }
+
+  // 임팩트 순간 화면 흔들림
+  if (slamState.progress >= 0.3 && slamState.progress < 0.38) {
+    if (gameState.shakeTimer === 0) gameState.shakeTimer = 10;
+  }
+
+  ctx.save();
+  ctx.translate(player.x, player.y);
+  ctx.rotate(player.angle);
+  ctx.translate(xOffset, yOffset);
+  ctx.scale(scale, scale);
+  ctx.globalAlpha = alpha;
+
+  const size = 140;
+  if (
+    cardImages.FIST &&
+    cardImages.FIST.complete &&
+    cardImages.FIST.naturalWidth > 0
+  ) {
+    // 이미지가 있다면 그대로 표시 (오른손 가정)
+    ctx.drawImage(cardImages.FIST, -size / 2, -size / 2, size, size);
+  } else {
+    // 대체 주먹 (오른손 실사 느낌 드로잉)
+    const skinColor = "#e0ac69"; // 피부색
+    const shadowColor = "#8d6e63"; // 그림자/윤곽선 색
+
+    // 1. 그림자 (바닥)
+    ctx.fillStyle = "rgba(0, 0, 0, 0.3)";
+    ctx.beginPath();
+    ctx.ellipse(10, 10, size / 2.2, size / 2.2, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 2. 손등 (베이스)
+    ctx.fillStyle = skinColor;
+    ctx.beginPath();
+    const r = 20;
+    const x = -size / 2.2;
+    const y = -size / 2.5;
+    const w = size * 0.9;
+    const h = size * 0.7;
+    // 둥근 사각형 그리기
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+    ctx.fill();
+
+    // 3. 손가락 마디 (주먹 쥔 모습)
+    for (let i = 0; i < 4; i++) {
+      const fingerX = -size / 2.8 + i * (size * 0.23);
+      const fingerY = size * 0.2;
+
+      // 손가락 마디 입체감 (그림자)
+      ctx.fillStyle = shadowColor;
+      ctx.beginPath();
+      ctx.arc(fingerX, fingerY + 3, size * 0.11, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 손가락 마디 (본체)
+      ctx.fillStyle = skinColor;
+      ctx.beginPath();
+      ctx.arc(fingerX, fingerY, size * 0.11, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 관절 주름
+      ctx.strokeStyle = shadowColor;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(fingerX, fingerY, size * 0.08, 0.5, 2.6);
+      ctx.stroke();
+    }
+
+    // 4. 엄지 손가락 (오른손이므로 왼쪽에 위치)
+    ctx.fillStyle = skinColor;
+    ctx.beginPath();
+    // 엄지가 검지 옆을 감싸는 형태
+    ctx.ellipse(-size * 0.35, 0, size * 0.12, size * 0.22, 0.2, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 엄지 윤곽선
+    ctx.strokeStyle = shadowColor;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.ellipse(-size * 0.35, 0, size * 0.12, size * 0.22, 0.2, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
 // 마우스 클릭 이벤트 처리
 canvas.addEventListener("click", (e) => {
   if (gameState.phase === "GAME_OVER") {
@@ -979,6 +1658,21 @@ function submitCards(playerIndex, cardIndices) {
 
   gameState.turnCount++; // 턴 카운트 증가
 
+  // 승패 조건 확인: 나를 제외한 모든 플레이어가 카드를 다 털었는지 확인 (또는 내가 다 털어서 1명만 남았는지)
+  const othersWithCards = players.filter(
+    (p) => !p.isDead && p !== players[playerIndex] && p.hand.length > 0,
+  );
+
+  if (othersWithCards.length === 0) {
+    // 나 말고 다른 사람들은 모두 카드를 털었음 (내가 마지막)
+    // 카드를 냈다는 것은 도전을 하지 않았다는 뜻이므로 패배 처리
+    const loser = players[playerIndex];
+    console.log(`${loser.name} is the last one playing cards!`);
+    showMessage(`${loser.displayName}이(가) 카드를 모두 털지 못했습니다!`, 150);
+    setTimeout(() => triggerRussianRoulette(loser), 2000);
+    return; // 턴 넘기지 않고 종료
+  }
+
   // 턴 넘기기
   nextTurn();
 
@@ -1031,7 +1725,14 @@ function processAiTurn() {
   setTimeout(() => {
     // 1. 도전(Liar) 여부 결정 (이전 플레이어가 카드를 냈을 경우)
     // 20% 확률로 도전 + 턴이 지날수록 5%씩 증가
-    const challengeChance = 0.2 + gameState.turnCount * 0.05;
+    let challengeChance = 0.2 + gameState.turnCount * 0.05;
+
+    // 나 말고 다 털었으면(마지막 생존자) 무조건 도전해야 함 (카드를 내면 패배하므로)
+    const othersWithCards = players.filter(
+      (p) => !p.isDead && p !== aiPlayer && p.hand.length > 0,
+    );
+    if (othersWithCards.length === 0) challengeChance = 1.0;
+
     if (gameState.lastPlayedBatch && Math.random() < challengeChance) {
       const phrases = ["거짓말!", "말도 안 돼.", "까봐!", "의심스러운데..."];
       showBubble(aiIndex, phrases[Math.floor(Math.random() * phrases.length)]);
@@ -1045,7 +1746,13 @@ function processAiTurn() {
     const validIndices = [];
     const invalidIndices = [];
     aiPlayer.hand.forEach((card, index) => {
-      if (card.type === gameState.currentRank || card.type === "J") {
+      if (
+        card.type === gameState.currentRank ||
+        card.type === "J" ||
+        card.type === "D"
+      ) {
+        // 데빌 카드가 있다면 데빌 카드만 따로 분류하거나 우선순위 조정 필요
+        // 여기서는 단순하게 유효 카드로 분류하되, 아래에서 섞을 때 주의
         validIndices.push(index);
       } else {
         invalidIndices.push(index);
@@ -1069,7 +1776,17 @@ function processAiTurn() {
         validIndices.length,
         Math.floor(Math.random() * 3) + 1,
       ); // 1~3장
-      indicesToPlay = validIndices.slice(0, count);
+
+      // 데빌 카드가 포함되어 있다면 데빌 카드만 선택하도록 필터링
+      const devilIndices = validIndices.filter(
+        (idx) => aiPlayer.hand[idx].type === "D",
+      );
+      if (devilIndices.length > 0) {
+        // 데빌 카드가 있으면 데빌 카드만 냄 (AI 전략)
+        indicesToPlay = devilIndices;
+      } else {
+        indicesToPlay = validIndices.slice(0, count);
+      }
 
       // 진실 대사
       const phrases = ["진짜야.", "믿어줘.", `${rankText} 냈어.`, "진실이야."];
@@ -1087,7 +1804,17 @@ function processAiTurn() {
         const j = Math.floor(Math.random() * (i + 1));
         [allIndices[i], allIndices[j]] = [allIndices[j], allIndices[i]];
       }
+
+      // 섞은 후 선택된 카드들에 데빌 카드가 섞여 있는지 확인
       indicesToPlay = allIndices.slice(0, count);
+      const selectedCards = indicesToPlay.map((idx) => aiPlayer.hand[idx]);
+      const hasDevil = selectedCards.some((c) => c.type === "D");
+      if (hasDevil) {
+        // 데빌 카드가 섞였다면 데빌 카드만 남기거나 다시 선택 (여기서는 데빌만 남김)
+        indicesToPlay = indicesToPlay.filter(
+          (idx) => aiPlayer.hand[idx].type === "D",
+        );
+      }
 
       // 블러핑 대사
       const phrases = ["쉽네.", "거짓말 아니야.", "믿어봐.", "카드 낸다."];
@@ -1104,12 +1831,18 @@ function processAiTurn() {
 }
 
 function challenge() {
+  // 중복 클릭 방지: 이미 처리 중이거나 다른 단계라면 무시
+  if (gameState.phase !== "PLAYING") return;
+
+  const btnLiar = document.getElementById("btn-liar");
+  if (btnLiar) btnLiar.classList.add("hidden");
+
   gameState.phase = "RESOLVING";
   const challenger = players[gameState.turnIndex];
   const lastBatch = gameState.lastPlayedBatch;
   const submitter = players[lastBatch.playerIndex];
   const isLie = lastBatch.cards.some(
-    (c) => c.type !== gameState.currentRank && c.type !== "J",
+    (c) => c.type !== gameState.currentRank && c.type !== "J" && c.type !== "D",
   );
 
   // 도전 대사 (플레이어가 도전했을 때도 말풍선 표시)
@@ -1122,10 +1855,22 @@ function challenge() {
   console.log("--- CHALLENGE! ---");
   console.log(`Challenger: ${challenger.name}, Submitter: ${submitter.name}`);
 
+  // 주먹 내리치기 애니메이션 시작
+  slamState.active = true;
+  slamState.playerIndex = gameState.turnIndex;
+  slamState.progress = 0;
+
   lastBatch.cards.forEach((card) => {
     // 결과 확인을 위해 앞면으로 뒤집기 (애니메이션 없이 즉시)
     card.faceUp = true;
   });
+
+  // 데빌 카드 체크
+  const hasDevil = lastBatch.cards.some((c) => c.type === "D");
+  if (hasDevil) {
+    handleDevilEffect(submitter);
+    return;
+  }
 
   // 테이블의 마지막 카드들을 앞면으로 그림 (draw 함수에서 처리됨)
   // 여기서는 결과 처리만
@@ -1139,6 +1884,9 @@ function challenge() {
     loser = challenger;
   }
 
+  // 진실/거짓 밝혀질 때 효과음 (두둥!)
+  playSound("drama");
+
   showMessage(isLie ? "거짓말!" : "진실!", 100);
 
   setTimeout(() => {
@@ -1146,57 +1894,307 @@ function challenge() {
   }, 2000);
 }
 
-function triggerRussianRoulette(victim) {
-  gameState.phase = "ROULETTE";
-  playBGM("roulette"); // 룰렛 BGM으로 전환
-  gameState.lighting = "DIM"; // 조명 어둡게 (긴장감)
-  showMessage(`${victim.displayName}이(가) 방아쇠를 당깁니다...`, 100);
+function handleDevilEffect(submitter) {
+  console.log("DEVIL CARD ACTIVATED!");
+  playSound("drama");
+  showMessage("데빌 카드 발동!", 200);
 
-  const heartbeat = document.getElementById("sfx-heartbeat");
-  if (heartbeat) {
-    heartbeat.volume = 0.8;
-    heartbeat.play().catch(() => {});
+  // 제출자를 제외한 모든 생존자를 대기열에 추가
+  const victims = players.filter((p) => !p.isDead && p !== submitter);
+
+  // 동시 격발 함수 호출
+  setTimeout(() => {
+    triggerSimultaneousRoulette(victims);
+  }, 2000);
+}
+
+function processRouletteQueue() {
+  if (gameState.rouletteQueue.length === 0) {
+    checkWinCondition();
+    return;
   }
+  const victim = gameState.rouletteQueue.shift();
+  triggerRussianRoulette(victim, () => processRouletteQueue());
+}
+
+// 단일 대상 룰렛 (기존 함수 유지)
+function triggerRussianRoulette(victim, onComplete = null) {
+  gameState.phase = "ROULETTE";
+  animations.length = 0; // 진행 중인 카드 애니메이션 제거
+  playBGM("roulette"); // 룰렛 BGM으로 전환
+  gameState.victimIndices = [players.indexOf(victim)]; // 대상 플레이어 인덱스 저장
+  gameState.lighting = "DIM"; // 조명 어둡게 (긴장감)
+  gameState.rouletteStartTime = Date.now(); // 애니메이션 시작 시간 기록
+
+  // 게임 상태 텍스트 숨기기 (총 쏠 때는 안 보이게)
+  const statusEl = document.getElementById("game-status");
+  if (statusEl) statusEl.classList.add("hidden");
+
+  // 1. 시작 메시지 (0초)
+  showMessage(`${victim.displayName}가 룰렛에 당첨 되었습니다!`, 120);
+
+  // 2. 철컥 (2초)
+  setTimeout(() => {
+    playSound("cock"); // 기계음 (철컥)
+    showMessage("철컥", 120);
+  }, 2000);
+
+  // 3. 방아쇠를 당겨주세요 (4초)
+  setTimeout(() => {
+    showMessage("방아쇠를 당겨주세요", 180);
+  }, 4000);
+
+  // 4. ... (7초)
+  setTimeout(() => {
+    showMessage("...", 180);
+  }, 7000);
 
   setTimeout(() => {
-    if (heartbeat) {
-      heartbeat.pause();
-      heartbeat.currentTime = 0;
-    }
-
     // 발사 로직 (1/6 확률, 실제로는 챔버가 돌아감)
     const isBang = revolver.currentChamber === revolver.bulletPosition;
     revolver.currentChamber = (revolver.currentChamber + 1) % revolver.chambers;
 
     if (isBang) {
-      showMessage("탕!!!", 150);
+      showMessage("탕! (죽음)", 150);
       playSound("gun"); // 총소리
       gameState.shakeTimer = 30; // 30프레임 동안 흔들림
       gameState.lighting = "RED_FLASH"; // 붉은 섬광
       gameState.lightingTimer = 60;
       victim.isDead = true;
 
+      // 피자국 생성 (테이블 위)
+      // 플레이어 위치에서 테이블 중앙 쪽으로 약간 이동한 지점을 피자국 중심으로 설정 (테이블에 묻도록)
+      const dx = centerX - victim.x;
+      const dy = tableY - victim.y;
+      const splatterCenterX = victim.x + dx * 0.15; // 테이블 쪽으로 15% 이동
+      const splatterCenterY = victim.y + dy * 0.15;
+
+      // 1. 메인 웅덩이 (Main Pool) - 크고 불규칙함
+      const mainPoolCount = 3 + Math.floor(Math.random() * 2);
+      for (let i = 0; i < mainPoolCount; i++) {
+        const points = [];
+        const segments = 10 + Math.floor(Math.random() * 6); // 세그먼트 많이
+        const baseRadius = 25 + Math.random() * 25;
+
+        for (let j = 0; j < segments; j++) {
+          const theta = (j / segments) * Math.PI * 2;
+          const r = baseRadius * (0.6 + Math.random() * 0.8); // 반지름 변화를 주어 울퉁불퉁하게
+          points.push({ x: Math.cos(theta) * r, y: Math.sin(theta) * r });
+        }
+
+        gameState.bloodSplatters.push({
+          x: splatterCenterX + (Math.random() - 0.5) * 30,
+          y: splatterCenterY + (Math.random() - 0.5) * 30,
+          points: points,
+          color: `rgba(${100 + Math.random() * 40}, 0, 0, ${0.8 + Math.random() * 0.2})`,
+          scaleX: 1,
+          scaleY: 1,
+          rotation: Math.random() * Math.PI * 2,
+        });
+      }
+
+      // 2. 튀는 핏방울 (Droplets & Streaks)
+      const dropletCount = 40 + Math.floor(Math.random() * 30);
+      for (let i = 0; i < dropletCount; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const dist = 30 + Math.random() * 150; // 퍼지는 범위 확대
+        const sizeFactor = Math.max(0.2, 1 - dist / 200); // 거리에 따라 크기 감소
+
+        const points = [];
+        const segments = 5 + Math.floor(Math.random() * 3);
+        const baseRadius = (2 + Math.random() * 6) * sizeFactor;
+
+        for (let j = 0; j < segments; j++) {
+          const theta = (j / segments) * Math.PI * 2;
+          const r = baseRadius * (0.7 + Math.random() * 0.6);
+          points.push({ x: Math.cos(theta) * r, y: Math.sin(theta) * r });
+        }
+
+        // 방향성 스트릭 (멀리 있는 것은 찌그러짐)
+        let scaleX = 1;
+        let scaleY = 1;
+        if (Math.random() > 0.7) {
+          scaleX = 1 + Math.random() * 2.0; // 길쭉하게
+          scaleY = 0.3 + Math.random() * 0.4; // 얇게
+        }
+
+        gameState.bloodSplatters.push({
+          x: splatterCenterX + Math.cos(angle) * dist,
+          y: splatterCenterY + Math.sin(angle) * dist,
+          points: points,
+          color: `rgba(${110 + Math.random() * 50}, 0, 0, ${0.6 + Math.random() * 0.4})`,
+          scaleX: scaleX,
+          scaleY: scaleY,
+          rotation: angle, // 중심에서 바깥쪽을 향해 회전
+        });
+      }
+
       // 사망 메시지 표시
       const statusEl = document.getElementById("game-status");
       if (statusEl) {
-        statusEl.textContent = `${victim.displayName}은(는) 사망하였습니다.`;
+        statusEl.textContent = `${victim.displayName}는 사망하였습니다.`;
         statusEl.style.color = "#c62828";
       }
 
       // 사망 처리 후 게임 상태 확인
       setTimeout(() => {
-        checkWinCondition();
+        if (onComplete) {
+          onComplete();
+        } else {
+          checkWinCondition();
+        }
       }, 2000);
     } else {
       playSound("click"); // 빈 총 소리
-      showMessage("철컥... (생존)", 100);
+      showMessage("착! (생존)", 100);
       gameState.lighting = "FLICKER"; // 조명 깜빡임
       gameState.lightingTimer = 30;
       setTimeout(() => {
-        startRound(); // 생존 시 다음 라운드
+        if (onComplete) {
+          onComplete();
+        } else {
+          startRound(); // 생존 시 다음 라운드
+        }
       }, 2000);
     }
+  }, 10000);
+}
+
+// 다수 대상 동시 룰렛 (데빌 카드용)
+function triggerSimultaneousRoulette(victims) {
+  gameState.phase = "ROULETTE";
+  animations.length = 0;
+  playBGM("roulette");
+  gameState.victimIndices = victims.map((v) => players.indexOf(v)); // 모든 피해자 인덱스 저장
+  gameState.lighting = "DIM";
+  gameState.rouletteStartTime = Date.now();
+
+  const statusEl = document.getElementById("game-status");
+  if (statusEl) statusEl.classList.add("hidden");
+
+  // 1. 시작 메시지
+  showMessage("모두가 룰렛에 당첨되었습니다!", 120);
+
+  // 2. 철컥
+  setTimeout(() => {
+    playSound("cock");
+    showMessage("철컥", 120);
   }, 2000);
+
+  // 3. 방아쇠
+  setTimeout(() => {
+    showMessage("방아쇠를 당겨주세요", 180);
+  }, 4000);
+
+  // 4. ...
+  setTimeout(() => {
+    showMessage("...", 180);
+  }, 7000);
+
+  // 5. 결과 확인 (동시)
+  setTimeout(() => {
+    let anyDeath = false;
+    const deadVictims = [];
+
+    victims.forEach((victim) => {
+      // 각자 확률 계산 (독립 시행)
+      // 주의: revolver 객체는 하나지만 여기서는 각자 쏘는 것으로 연출하므로
+      // 실제로는 각자의 운명을 따로 계산해야 함.
+      // 게임의 재미를 위해 revolver 상태를 공유하지 않고 랜덤 확률(1/6)로 처리하거나
+      // revolver를 돌려가며 쏜다고 가정. 여기서는 단순하게 1/6 확률 독립 시행으로 처리.
+      const bulletPos = Math.floor(Math.random() * 6);
+      const currentChamber = Math.floor(Math.random() * 6);
+      const isBang = bulletPos === currentChamber;
+
+      if (isBang) {
+        anyDeath = true;
+        victim.isDead = true;
+        deadVictims.push(victim);
+
+        // 피자국 생성 로직 (각 피해자 위치)
+        const dx = centerX - victim.x;
+        const dy = tableY - victim.y;
+        const splatterCenterX = victim.x + dx * 0.15;
+        const splatterCenterY = victim.y + dy * 0.15;
+
+        // 피자국 생성 (간소화된 버전 호출)
+        createBloodSplatter(splatterCenterX, splatterCenterY);
+      }
+    });
+
+    if (anyDeath) {
+      showMessage("탕! (사망자 발생)", 150);
+      playSound("gun");
+      gameState.shakeTimer = 30;
+      gameState.lighting = "RED_FLASH";
+      gameState.lightingTimer = 60;
+
+      const statusEl = document.getElementById("game-status");
+      if (statusEl) {
+        const names = deadVictims.map((v) => v.displayName).join(", ");
+        statusEl.textContent = `${names} 사망.`;
+        statusEl.style.color = "#c62828";
+      }
+    } else {
+      playSound("click");
+      showMessage("착! (전원 생존)", 100);
+      gameState.lighting = "FLICKER";
+      gameState.lightingTimer = 30;
+    }
+
+    setTimeout(() => {
+      checkWinCondition();
+    }, 2000);
+  }, 10000);
+}
+
+// 피자국 생성 헬퍼 함수
+function createBloodSplatter(cx, cy) {
+  // 1. 메인 웅덩이
+  const mainPoolCount = 2 + Math.floor(Math.random() * 2);
+  for (let i = 0; i < mainPoolCount; i++) {
+    const points = [];
+    const segments = 8 + Math.floor(Math.random() * 4);
+    const baseRadius = 20 + Math.random() * 20;
+    for (let j = 0; j < segments; j++) {
+      const theta = (j / segments) * Math.PI * 2;
+      const r = baseRadius * (0.6 + Math.random() * 0.8);
+      points.push({ x: Math.cos(theta) * r, y: Math.sin(theta) * r });
+    }
+    gameState.bloodSplatters.push({
+      x: cx + (Math.random() - 0.5) * 20,
+      y: cy + (Math.random() - 0.5) * 20,
+      points: points,
+      color: `rgba(${100 + Math.random() * 40}, 0, 0, ${0.8 + Math.random() * 0.2})`,
+      scaleX: 1,
+      scaleY: 1,
+      rotation: Math.random() * Math.PI * 2,
+    });
+  }
+  // 2. 튀는 핏방울 (약간 줄임)
+  const dropletCount = 20 + Math.floor(Math.random() * 20);
+  for (let i = 0; i < dropletCount; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const dist = 20 + Math.random() * 100;
+    const sizeFactor = Math.max(0.2, 1 - dist / 150);
+    const points = [];
+    const segments = 4 + Math.floor(Math.random() * 3);
+    const baseRadius = (2 + Math.random() * 4) * sizeFactor;
+    for (let j = 0; j < segments; j++) {
+      const theta = (j / segments) * Math.PI * 2;
+      const r = baseRadius * (0.7 + Math.random() * 0.6);
+      points.push({ x: Math.cos(theta) * r, y: Math.sin(theta) * r });
+    }
+    gameState.bloodSplatters.push({
+      x: cx + Math.cos(angle) * dist,
+      y: cy + Math.sin(angle) * dist,
+      points: points,
+      color: `rgba(${110 + Math.random() * 50}, 0, 0, ${0.6 + Math.random() * 0.4})`,
+      scaleX: 1,
+      scaleY: 1,
+      rotation: angle,
+    });
+  }
 }
 
 function checkWinCondition() {
@@ -1217,6 +2215,7 @@ function startRound() {
   // 테이블 초기화
   gameState.tableCards = [];
   gameState.lastPlayedBatch = null;
+  // gameState.bloodSplatters = []; // 피자국은 유지할지 초기화할지 선택 (여기선 유지하여 공포감 조성)
   gameState.phase = "DEALING";
   gameState.lighting = "NORMAL"; // 조명 복구
   gameState.turnCount = 0; // 턴 카운트 초기화
@@ -1227,11 +2226,13 @@ function startRound() {
     nextTurn();
   }
 
-  // 덱 재생성 및 셔플
-  // (간단하게 기존 cardTypes 다시 셔플)
-  for (let i = cardTypes.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [cardTypes[i], cardTypes[j]] = [cardTypes[j], cardTypes[i]];
+  // 덱 재생성 (20% 확률로 데빌 카드 포함)
+  cardTypes = createDeck();
+
+  // 데빌 카드 존재 여부 확인 및 알림
+  if (cardTypes.includes("D")) {
+    playSound("devil");
+    showMessage("데빌카드가 존재합니다", 200);
   }
 
   // 생존자들에게 카드 다시 배분 (기존 핸드 초기화)
@@ -1247,39 +2248,72 @@ function startRound() {
   // 여기서는 간단히 죽은 사람에게도 카드가 가는 모션은 나오되 핸드에는 안 쌓이게 처리하거나
   // dealtCount 로직을 수정해야 함. 편의상 죽은 사람은 건너뛰고 산 사람에게만 5장씩 주도록 수정.
 
+  // 살아있는 사람 수 * 5장으로 카드 수 설정
+  const survivors = players.filter((p) => !p.isDead);
+  dealingState.totalCards = survivors.length * 5;
+
   // 새 랭크 설정
   const ranks = ["K", "Q", "S"];
   gameState.currentRank = ranks[Math.floor(Math.random() * ranks.length)];
   updateTargetDisplay();
 }
 
+let messageTimeout = null;
 function showMessage(text, duration) {
   const overlay = document.getElementById("message-overlay");
   overlay.textContent = text;
   overlay.classList.remove("hidden");
 
+  if (messageTimeout) {
+    clearTimeout(messageTimeout);
+  }
+
   // duration이 지나면 숨김 (프레임 단위가 아닌 시간 단위로 변경)
-  setTimeout(() => {
+  messageTimeout = setTimeout(() => {
     overlay.classList.add("hidden");
   }, duration * 16); // 기존 duration이 프레임 단위였으므로 대략 ms로 변환
 }
 
 function updateTargetDisplay() {
-  let rankSymbol = gameState.currentRank;
-  if (rankSymbol === "S") rankSymbol = "A(♠)";
-  if (rankSymbol === "J") rankSymbol = "JOKER";
-  document.getElementById("target-rank").textContent = `목표: ${rankSymbol}`;
+  const el = document.getElementById("target-rank");
+  if (!el) return;
+
+  const rank = gameState.currentRank;
+
+  // 1. 상시 표시 (텍스트) - 원래대로 복구
+  el.textContent = `Target: ${rank}`;
+
+  // 2. 중앙 팝업 (이미지 + 텍스트) - 일시적 표시
+  const popup = document.getElementById("target-popup");
+  const popupImg = document.getElementById("target-popup-img");
+  const popupText = document.getElementById("target-popup-text");
+
+  if (popup && popupImg && popupText) {
+    const imgId = imgIds[rank];
+    const sourceImg = document.getElementById(imgId);
+    if (sourceImg) {
+      popupImg.src = sourceImg.src;
+      popupText.textContent = `Target: ${rank}`;
+      popup.classList.remove("hidden");
+
+      // 2초 후 사라짐
+      setTimeout(() => {
+        popup.classList.add("hidden");
+      }, 2000);
+    }
+  }
 }
 
 function updateGameStatus() {
   const statusEl = document.getElementById("game-status");
   if (!statusEl) return;
+  statusEl.classList.remove("hidden"); // 상태 업데이트 시 다시 보이게 함
 
   if (gameState.turnIndex === 3) {
     statusEl.textContent = "플레이어 1은 카드를 내주세요";
     statusEl.style.color = "#ffffff"; // White
   } else {
-    statusEl.textContent = `${players[gameState.turnIndex].displayName}이(가) 선택 중입니다...`;
+    statusEl.textContent = `${players[gameState.turnIndex].displayName}가 선택 중입니다...`;
     statusEl.style.color = "#ffffff";
   }
 }
@@ -1294,6 +2328,21 @@ function showGameOver(isWin) {
   if (isWin) {
     title.textContent = "생존했습니다";
     title.style.color = "#2e7d32";
+
+    // 승리 효과: 환호성 및 폭죽 3개
+    playSound("cheer");
+    setTimeout(
+      () => createFirework(canvas.width * 0.3, canvas.height * 0.3),
+      0,
+    );
+    setTimeout(
+      () => createFirework(canvas.width * 0.7, canvas.height * 0.3),
+      400,
+    );
+    setTimeout(
+      () => createFirework(canvas.width * 0.5, canvas.height * 0.2),
+      800,
+    );
   } else {
     title.textContent = "사망했습니다";
     title.style.color = "#c62828";
@@ -1304,8 +2353,14 @@ function showGameOver(isWin) {
 
 document.getElementById("btn-start").addEventListener("click", () => {
   document.getElementById("start-screen").classList.add("hidden");
+
+  // 오디오 컨텍스트 시작 (브라우저 정책 대응)
+  if (audioCtx.state === "suspended") {
+    audioCtx.resume();
+  }
+
   gameState.phase = "DEALING";
-  playSound("click");
+  playSound("select");
   playBGM("main");
 });
 
@@ -1314,6 +2369,16 @@ document.getElementById("btn-play").addEventListener("click", () => {
   const selectedIndices = player.hand
     .map((card, index) => (card.isSelected ? index : -1))
     .filter((index) => index !== -1);
+
+  // 데빌 카드 규칙: 데빌 카드가 포함되면 데빌 카드만 낼 수 있음
+  const selectedCards = selectedIndices.map((idx) => player.hand[idx]);
+  const hasDevil = selectedCards.some((c) => c.type === "D");
+  const onlyDevil = selectedCards.every((c) => c.type === "D");
+  if (hasDevil && !onlyDevil) {
+    alert("데빌 카드는 다른 카드와 함께 낼 수 없습니다.");
+    return;
+  }
+
   submitCards(3, selectedIndices);
 });
 
@@ -1339,6 +2404,86 @@ document.getElementById("btn-fullscreen").addEventListener("click", () => {
     document.exitFullscreen();
   }
 });
+
+// --- 사운드 컨트롤 이벤트 ---
+const btnMute = document.getElementById("btn-mute");
+const volumeSlider = document.getElementById("volume-slider");
+let isMuted = false;
+let previousVolume = 0.5;
+
+if (btnMute) {
+  btnMute.addEventListener("click", () => {
+    if (audioCtx.state === "suspended") {
+      audioCtx.resume();
+    }
+
+    isMuted = !isMuted;
+    const mainBgm = document.getElementById("bgm-main");
+    const rouletteBgm = document.getElementById("bgm-roulette");
+
+    if (isMuted) {
+      // 뮤트 시 현재 볼륨 저장 (0이 아닐 때만)
+      if (masterGain.gain.value > 0) {
+        previousVolume = masterGain.gain.value;
+      }
+
+      masterGain.gain.value = 0;
+      if (mainBgm) mainBgm.volume = 0;
+      if (rouletteBgm) rouletteBgm.volume = 0;
+
+      btnMute.textContent = "🔇";
+      if (volumeSlider) volumeSlider.value = 0;
+    } else {
+      // 언뮤트 시 이전 볼륨 복구
+      const targetVol = previousVolume > 0 ? previousVolume : 0.5;
+
+      masterGain.gain.value = targetVol;
+      if (mainBgm) mainBgm.volume = targetVol * 0.1;
+      if (rouletteBgm) rouletteBgm.volume = targetVol * 0.1;
+
+      btnMute.textContent = "🔊";
+      if (volumeSlider) volumeSlider.value = targetVol;
+    }
+  });
+}
+
+if (volumeSlider) {
+  volumeSlider.addEventListener("input", (e) => {
+    if (audioCtx.state === "suspended") {
+      audioCtx.resume();
+    }
+
+    const vol = parseFloat(e.target.value);
+    masterGain.gain.value = vol;
+
+    const mainBgm = document.getElementById("bgm-main");
+    const rouletteBgm = document.getElementById("bgm-roulette");
+    if (mainBgm) mainBgm.volume = vol * 0.1;
+    if (rouletteBgm) rouletteBgm.volume = vol * 0.1;
+
+    if (vol === 0) {
+      isMuted = true;
+      if (btnMute) btnMute.textContent = "🔇";
+    } else {
+      isMuted = false;
+      if (btnMute) btnMute.textContent = "🔊";
+    }
+  });
+}
+
+// 페이지 로드 시 BGM 자동 재생 시도
+playBGM("main");
+
+// 브라우저 정책으로 자동 재생이 막혔을 경우, 첫 클릭 시 재생
+document.addEventListener(
+  "click",
+  () => {
+    if (audioCtx.state === "suspended") {
+      audioCtx.resume();
+    }
+  },
+  { once: true },
+);
 
 // 그리기 실행
 draw();

@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Liars Roulette Table</title>
     <link rel="stylesheet" href="liars-roulette.css" />
+    <link rel="icon" href="data:;base64,iVBORw0KGgo=" />
   </head>
   <body>
     <div id="game-container">
@@ -16,10 +17,26 @@
         <div id="start-screen" class="screen">
           <h1 class="title">Liars-Roulette</h1>
           <button id="btn-start" class="btn primary">게임 시작</button>
+          <button id="btn-howto" class="btn secondary" style="margin-top: 20px">
+            게임 방법
+          </button>
         </div>
 
         <!-- 전체 화면 버튼 -->
         <button id="btn-fullscreen" class="btn">전체 화면</button>
+
+        <!-- 사운드 컨트롤 (음소거 및 볼륨) -->
+        <div id="sound-controls">
+          <button id="btn-mute" class="btn-icon">🔊</button>
+          <input
+            type="range"
+            id="volume-slider"
+            min="0"
+            max="1"
+            step="0.01"
+            value="0.5"
+          />
+        </div>
 
         <!-- 게임 HUD (헤드업 디스플레이) -->
         <div id="game-hud" class="hidden">
@@ -31,10 +48,81 @@
           </div>
         </div>
 
+        <!-- 목표 카드 팝업 (일시적 표시) -->
+        <div
+          id="target-popup"
+          class="hidden"
+          style="
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 300;
+            pointer-events: none;
+          "
+        >
+          <img
+            id="target-popup-img"
+            src=""
+            alt="Target Card"
+            style="
+              width: 120px;
+              height: auto;
+              border-radius: 10px;
+              box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+              margin-bottom: 10px;
+            "
+          />
+          <div
+            id="target-popup-text"
+            style="
+              font-size: 32px;
+              font-weight: bold;
+              color: #d4af37;
+              text-shadow: 2px 2px 4px black;
+            "
+          >
+            Target: ?
+          </div>
+        </div>
+
         <!-- 게임 오버 화면 -->
         <div id="game-over-screen" class="screen hidden">
           <h1 id="game-over-title">YOU DIED</h1>
           <button id="btn-restart" class="btn primary">다시 시작</button>
+        </div>
+
+        <!-- 게임 방법 모달 -->
+        <div id="howto-modal" class="screen hidden">
+          <div class="modal-content">
+            <h2>게임 방법</h2>
+            <div class="rules-text">
+              <p>
+                1. <strong>목표:</strong> 끝까지 살아남는 최후의 1인이 되세요.
+              </p>
+              <p>
+                2. <strong>진행:</strong> 자신의 턴에 목표(Target)와 같은 카드를
+                냅니다. (거짓말 가능)
+              </p>
+              <p>
+                3. <strong>의심:</strong> 다른 플레이어가 거짓말을 한다고
+                생각되면 "거짓말!" 버튼을 누르세요.
+              </p>
+              <p>4. <strong>결과:</strong></p>
+              <ul>
+                <li>검거 성공: 카드를 낸 사람이 리볼버를 당깁니다.</li>
+                <li>검거 실패(진실): 의심한 사람이 리볼버를 당깁니다.</li>
+              </ul>
+              <p>
+                5. <strong>특수 카드 (데빌):</strong> 20% 확률로 등장하며, 발동
+                시 카드를 낸 사람을 제외한 전원이 룰렛을 돌립니다.
+              </p>
+            </div>
+            <button id="btn-close-howto" class="btn primary">닫기</button>
+          </div>
         </div>
 
         <!-- 메시지 오버레이 -->
@@ -54,13 +142,12 @@
 
     <!-- 오디오 리소스 (sound 폴더에 파일을 넣어주세요) -->
     <div style="display: none">
-      <audio id="sfx-card" src="./sound/card.mp3"></audio>
-      <audio id="sfx-gun" src="./sound/gun.mp3"></audio>
+      <audio id="bgm-main" src="./sound/Clockwork Clues.mp3" loop></audio>
+      <audio id="bgm-roulette" src="./sound/Pulse In The Dark.mp3" loop></audio>
+      <audio id="sfx-cock" src="./sound/cock.mp3"></audio>
       <audio id="sfx-click" src="./sound/click.mp3"></audio>
-      <audio id="sfx-select" src="./sound/select.mp3"></audio>
-      <audio id="sfx-heartbeat" src="./sound/heartbeat.mp3" loop></audio>
-      <audio id="bgm-main" src="./sound/bgm.mp3" loop></audio>
-      <audio id="bgm-roulette" src="./sound/roulette.mp3" loop></audio>
+      <audio id="sfx-gun" src="./sound/bang.mp3"></audio>
+      <audio id="sfx-devil" src="./sound/deveil.mp3"></audio>
     </div>
 
     <!-- 카드 이미지 리소스 (화면에 보이지 않음) -->
@@ -71,6 +158,7 @@
       <img id="img-J" src="./pokercard/조커카드.jpg" alt="Joker" />
       <img id="img-S" src="./pokercard/스페이드 카드.png" alt="Spade" />
       <img id="img-back" src="./pokercard/포커카드 뒷면.jpg" alt="Back" />
+      <img id="img-D" src="./pokercard/데빌카드.jpg" alt="Devil" />
     </div>
 
     <script src="liars-roulette.js"></script>
