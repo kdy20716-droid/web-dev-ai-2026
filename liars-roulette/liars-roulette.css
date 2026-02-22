@@ -15,8 +15,17 @@ body {
 
 #game-container {
   position: relative;
-  width: 1024px;
-  height: 900px;
+  width: 100%;
+  height: 100%;
+  max-width: 1024px;
+  max-height: 900px;
+  aspect-ratio: 1024 / 900; /* 비율 유지 */
+}
+
+/* 전체 화면 모드일 때 크기 제한 해제 */
+#game-container.fullscreen {
+  max-width: none;
+  max-height: none;
 }
 
 canvas {
@@ -160,10 +169,10 @@ canvas {
   transform: none;
   background-color: rgba(0, 0, 0, 0.7);
   color: white;
-  padding: 10px 20px;
+  padding: calc(10px * var(--game-scale, 1)) calc(20px * var(--game-scale, 1));
   border-radius: 15px;
   border: 2px solid #d4af37;
-  font-size: 24px;
+  font-size: calc(24px * var(--game-scale, 1));
   font-weight: bold;
 }
 
@@ -189,7 +198,7 @@ canvas {
 }
 
 #target-popup-text {
-  font-size: 40px;
+  font-size: calc(40px * var(--game-scale, 1));
   font-weight: bold;
   color: #d4af37;
   text-shadow: 2px 2px 4px black;
@@ -201,16 +210,15 @@ canvas {
   left: 50%;
   transform: translate(-50%, -50%);
   color: #ffffff;
-  font-size: 28px;
+  font-size: calc(28px * var(--game-scale, 1));
   font-weight: bold;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
 }
 
 #action-buttons {
   position: absolute;
-  bottom: 50px;
-  left: calc(50% + 240px); /* 카드 오른쪽으로 이동 */
-  transform: none;
+  bottom: 40px;
+  right: 40px;
   display: flex;
   gap: 20px;
 }
@@ -220,13 +228,18 @@ canvas {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  font-size: 60px;
+  font-size: calc(60px * var(--game-scale, 1));
   font-weight: bold;
   color: white;
   text-shadow: 0 0 20px black;
   text-align: center;
   width: 100%;
   pointer-events: none;
+}
+
+/* 완료 버튼 비활성화 시 숨김 */
+#btn-play:disabled {
+  display: none;
 }
 
 .hidden {
@@ -300,4 +313,88 @@ canvas {
 body.fade-out {
   opacity: 0;
   transition: opacity 1s ease-out;
+}
+
+/* 모바일 전체화면 안내 (기본 숨김) */
+#mobile-fullscreen-guide {
+  display: none;
+}
+
+/* 800px 이하 세로 모드일 때 안내 표시 및 버튼 중앙 이동 */
+@media (max-width: 800px) and (orientation: portrait) {
+  #mobile-fullscreen-guide {
+    display: block;
+    position: absolute;
+    top: 45%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 24px;
+    font-weight: bold;
+    text-shadow: 0 0 5px black;
+    z-index: 300;
+    width: 100%;
+    text-align: center;
+    pointer-events: none;
+  }
+
+  #btn-fullscreen {
+    top: 55%;
+    left: 50%;
+    right: auto;
+    transform: translate(-50%, -50%);
+    font-size: 20px;
+    padding: 15px 30px;
+    background-color: #2e7d32;
+    border: 2px solid #81c784;
+    z-index: 301;
+  }
+}
+
+/* 게임 방법 모달 스타일 */
+.modal-content {
+  background-color: #1a1a1a;
+  border: 4px solid #5d4037;
+  border-radius: 15px;
+  padding: 30px;
+  max-width: 600px;
+  width: 90%;
+  color: #e0e0e0;
+  box-shadow: 0 0 50px rgba(0, 0, 0, 0.9);
+  text-align: left;
+}
+
+.modal-content h2 {
+  text-align: center;
+  color: #d4af37;
+  font-size: 32px;
+  margin-top: 0;
+  margin-bottom: 20px;
+  text-shadow: 2px 2px 4px black;
+  border-bottom: 2px solid #3e2723;
+  padding-bottom: 15px;
+}
+
+.rule-block {
+  margin-bottom: 20px;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 15px;
+  border-radius: 8px;
+}
+
+.rule-block h3 {
+  color: #ff5252;
+  margin: 0 0 10px 0;
+  font-size: 20px;
+}
+
+.rule-block p {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.rule-block ul {
+  margin: 10px 0 0 0;
+  padding-left: 20px;
 }
