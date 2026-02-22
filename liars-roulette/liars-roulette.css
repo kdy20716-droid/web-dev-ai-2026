@@ -105,10 +105,11 @@ canvas {
 }
 
 .title {
-  font-size: 80px;
+  font-size: clamp(40px, 15vw, 80px); /* 화면 크기에 따라 자동 조절 (최소 40px, 최대 80px) */
   color: #c62828;
   margin-bottom: 40px;
   text-shadow: 0 0 10px rgba(198, 40, 40, 0.5);
+  white-space: nowrap; /* 줄바꿈 방지 */
 }
 
 #game-over-title {
@@ -356,9 +357,11 @@ body.fade-out {
   background-color: #1a1a1a;
   border: 4px solid #5d4037;
   border-radius: 15px;
-  padding: 30px;
-  max-width: 600px;
-  width: 90%;
+  padding: calc(30px * var(--game-scale, 1));
+  width: calc(600px * var(--game-scale, 1));
+  max-width: 90%;
+  max-height: 85%;
+  overflow-y: auto;
   color: #e0e0e0;
   box-shadow: 0 0 50px rgba(0, 0, 0, 0.9);
   text-align: left;
@@ -367,36 +370,40 @@ body.fade-out {
 .modal-content h2 {
   text-align: center;
   color: #d4af37;
-  font-size: 32px;
+  font-size: calc(32px * var(--game-scale, 1));
   margin-top: 0;
-  margin-bottom: 20px;
+  margin-bottom: calc(20px * var(--game-scale, 1));
   text-shadow: 2px 2px 4px black;
   border-bottom: 2px solid #3e2723;
-  padding-bottom: 15px;
+  padding-bottom: calc(15px * var(--game-scale, 1));
 }
 
 .rule-block {
-  margin-bottom: 20px;
+  margin-bottom: calc(20px * var(--game-scale, 1));
   background: rgba(255, 255, 255, 0.05);
-  padding: 15px;
+  padding: calc(15px * var(--game-scale, 1));
   border-radius: 8px;
 }
 
 .rule-block h3 {
   color: #ff5252;
-  margin: 0 0 10px 0;
-  font-size: 20px;
+  margin: 0 0 calc(10px * var(--game-scale, 1)) 0;
+  font-size: calc(20px * var(--game-scale, 1));
 }
 
 .rule-block p {
   margin: 0;
-  font-size: 16px;
+  font-size: calc(16px * var(--game-scale, 1));
   line-height: 1.5;
 }
 
 .rule-block ul {
-  margin: 10px 0 0 0;
+  margin: calc(10px * var(--game-scale, 1)) 0 0 0;
   padding-left: 20px;
+}
+
+.rule-block li {
+  font-size: calc(16px * var(--game-scale, 1));
 }
 
 /* 히든 리워드 이미지 스타일 */

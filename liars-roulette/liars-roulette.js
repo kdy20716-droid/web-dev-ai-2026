@@ -2506,10 +2506,18 @@ document.getElementById("btn-start").addEventListener("click", () => {
 
 document.getElementById("btn-howto").addEventListener("click", () => {
   document.getElementById("howto-modal").classList.remove("hidden");
+  // 게임 방법 창이 뜰 때 전체화면 버튼과 안내 문구 숨김
+  document.getElementById("btn-fullscreen").classList.add("hidden");
+  const guide = document.getElementById("mobile-fullscreen-guide");
+  if (guide) guide.classList.add("hidden");
 });
 
 document.getElementById("btn-close-howto").addEventListener("click", () => {
   document.getElementById("howto-modal").classList.add("hidden");
+  // 게임 방법 창이 닫힐 때 전체화면 버튼과 안내 문구 복구
+  document.getElementById("btn-fullscreen").classList.remove("hidden");
+  const guide = document.getElementById("mobile-fullscreen-guide");
+  if (guide) guide.classList.remove("hidden");
 });
 
 document.getElementById("btn-play").addEventListener("click", () => {
