@@ -120,11 +120,11 @@ canvas {
 
 /* 버튼 공통 스타일 */
 .btn {
-  padding: 15px 25px;
-  font-size: 24px;
+  padding: calc(15px * var(--game-scale, 1)) calc(25px * var(--game-scale, 1));
+  font-size: calc(24px * var(--game-scale, 1));
   font-weight: bold;
   border: none;
-  border-radius: 10px;
+  border-radius: calc(10px * var(--game-scale, 1));
   cursor: pointer;
   transition:
     transform 0.1s,
@@ -218,10 +218,10 @@ canvas {
 
 #action-buttons {
   position: absolute;
-  bottom: 40px;
-  right: 40px;
+  bottom: calc(40px * var(--game-scale, 1));
+  right: calc(40px * var(--game-scale, 1));
   display: flex;
-  gap: 20px;
+  gap: calc(20px * var(--game-scale, 1));
 }
 
 #message-overlay {
@@ -250,10 +250,10 @@ canvas {
 /* 전체 화면 버튼 */
 #btn-fullscreen {
   position: absolute;
-  top: 20px;
-  right: 20px;
-  padding: 8px 15px;
-  font-size: 14px;
+  top: calc(20px * var(--game-scale, 1));
+  right: calc(20px * var(--game-scale, 1));
+  padding: calc(8px * var(--game-scale, 1)) calc(15px * var(--game-scale, 1));
+  font-size: calc(14px * var(--game-scale, 1));
   background-color: rgba(255, 255, 255, 0.1);
   color: rgba(255, 255, 255, 0.7);
   border: 1px solid rgba(255, 255, 255, 0.2);
@@ -269,12 +269,12 @@ canvas {
 /* 사운드 컨트롤 */
 #sound-controls {
   position: absolute;
-  top: 70px; /* 전체 화면 버튼 아래 */
-  right: 20px;
+  top: calc(70px * var(--game-scale, 1)); /* 전체 화면 버튼 아래 */
+  right: calc(20px * var(--game-scale, 1));
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
+  gap: calc(10px * var(--game-scale, 1));
   z-index: 200;
   pointer-events: auto;
 }
@@ -283,8 +283,8 @@ canvas {
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
   color: white;
-  font-size: 20px;
-  padding: 5px 10px;
+  font-size: calc(20px * var(--game-scale, 1));
+  padding: calc(5px * var(--game-scale, 1)) calc(10px * var(--game-scale, 1));
   border-radius: 5px;
   cursor: pointer;
 }
@@ -294,7 +294,7 @@ canvas {
 }
 
 #volume-slider {
-  width: 100px;
+  width: calc(100px * var(--game-scale, 1));
   cursor: pointer;
   accent-color: #2e7d32;
 }
