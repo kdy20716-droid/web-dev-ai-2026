@@ -38,12 +38,12 @@ canvas {
 .speech-bubble {
   position: absolute;
   background: white;
-  border: 3px solid #333;
-  border-radius: 15px;
-  padding: 10px 15px;
+  border: calc(3px * var(--game-scale, 1)) solid #333;
+  border-radius: calc(15px * var(--game-scale, 1));
+  padding: calc(10px * var(--game-scale, 1)) calc(15px * var(--game-scale, 1));
   font-family: sans-serif;
   font-weight: bold;
-  font-size: 14px;
+  font-size: calc(14px * var(--game-scale, 1));
   color: black;
   opacity: 0;
   transition: opacity 0.3s ease;
@@ -59,21 +59,21 @@ canvas {
 /* 플레이어별 말풍선 위치 */
 #bubble-0 {
   top: 50%;
-  right: 20px;
+  right: calc(20px * var(--game-scale, 1));
   transform: translateY(-50%);
 } /* East */
 #bubble-1 {
-  top: 80px;
+  top: calc(80px * var(--game-scale, 1));
   left: 50%;
   transform: translateX(-50%);
 } /* North */
 #bubble-2 {
   top: 50%;
-  left: 20px;
+  left: calc(20px * var(--game-scale, 1));
   transform: translateY(-50%);
 } /* West */
 #bubble-3 {
-  bottom: 150px;
+  bottom: calc(150px * var(--game-scale, 1));
   left: 50%;
   transform: translateX(-50%);
 } /* South */
