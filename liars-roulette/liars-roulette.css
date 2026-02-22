@@ -398,3 +398,20 @@ body.fade-out {
   margin: 10px 0 0 0;
   padding-left: 20px;
 }
+
+/* 히든 리워드 이미지 스타일 */
+#hidden-reward {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translate(-50%, 15%); /* [위치 조절] 10%를 늘리면 더 아래로 내려갑니다 */
+  opacity: 0; /* 투명하게 숨김 */
+  transition: opacity 1s ease-in-out; /* 부드러운 등장/퇴장 */
+  z-index: 50;
+  max-height: 80%; /* 이미지 크기 증가 */
+  pointer-events: none;
+}
+
+#hidden-reward.active {
+  opacity: 1; /* 보이게 설정 */
+}

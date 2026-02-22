@@ -454,6 +454,8 @@ const gameState = {
   bloodSplatters: [], // 피자국 데이터 {x, y, points, color, scaleX, scaleY, rotation}
   rouletteQueue: [], // 데빌 카드 발동 시 룰렛 대기열
   rouletteStartTime: 0, // 룰렛 애니메이션 시작 시간
+  cameraY: 0, // 현재 카메라 Y 위치 (시점 이동용)
+  targetCameraY: 0, // 목표 카메라 Y 위치
 };
 
 function draw() {
@@ -468,13 +470,22 @@ function draw() {
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   ctx.save(); // 흔들림 효과 시작
+
+  // 카메라 시점 부드러운 이동 (Lerp)
+  gameState.cameraY += (gameState.targetCameraY - gameState.cameraY) * 0.05;
+  gameState.cameraY += (gameState.targetCameraY - gameState.cameraY) * 0.01; // 이동 속도를 더 느리게 조절 (0.05 -> 0.01)
+
+  let dx = 0;
+  let dy = 0;
   if (gameState.shakeTimer > 0) {
     const intensity = gameState.shakeTimer;
-    const dx = (Math.random() - 0.5) * intensity;
-    const dy = (Math.random() - 0.5) * intensity;
-    ctx.translate(dx, dy);
+    dx = (Math.random() - 0.5) * intensity;
+    dy = (Math.random() - 0.5) * intensity;
     gameState.shakeTimer--;
   }
+
+  // 흔들림 + 시점 이동 적용 (시점이 내려가면 캔버스는 위로 이동하므로 -cameraY)
+  ctx.translate(dx, dy - gameState.cameraY);
 
   // 조명 효과 계산
   let floorColor = "#1a1a1a";
@@ -1773,110 +1784,110 @@ function processAiTurn() {
     }
 
     setTimeout(() => {
-    // 1. 도전(Liar) 여부 결정 (이전 플레이어가 카드를 냈을 경우)
-    // 20% 확률로 도전 + 턴이 지날수록 5%씩 증가
-    let challengeChance = 0.2 + gameState.turnCount * 0.05;
+      // 1. 도전(Liar) 여부 결정 (이전 플레이어가 카드를 냈을 경우)
+      // 20% 확률로 도전 + 턴이 지날수록 5%씩 증가
+      let challengeChance = 0.2 + gameState.turnCount * 0.05;
 
-    // 나 말고 다 털었으면(마지막 생존자) 무조건 도전해야 함 (카드를 내면 패배하므로)
-    const othersWithCards = players.filter(
-      (p) => !p.isDead && p !== aiPlayer && p.hand.length > 0,
-    );
-    if (othersWithCards.length === 0) challengeChance = 1.0;
-
-    if (gameState.lastPlayedBatch && Math.random() < challengeChance) {
-      const phrases = ["거짓말!", "까봐!", "너 죽고 나죽자!"];
-      showBubble(aiIndex, phrases[Math.floor(Math.random() * phrases.length)]);
-      console.log(`${aiPlayer.name} challenges!`);
-      challenge();
-      return;
-    }
-
-    // 2. 카드 제출 로직
-    // 현재 랭크와 일치하거나 조커인 카드 찾기
-    const validIndices = [];
-    const invalidIndices = [];
-    aiPlayer.hand.forEach((card, index) => {
-      if (
-        card.type === gameState.currentRank ||
-        card.type === "J" ||
-        card.type === "D"
-      ) {
-        // 데빌 카드가 있다면 데빌 카드만 따로 분류하거나 우선순위 조정 필요
-        // 여기서는 단순하게 유효 카드로 분류하되, 아래에서 섞을 때 주의
-        validIndices.push(index);
-      } else {
-        invalidIndices.push(index);
-      }
-    });
-
-    // 랭크 텍스트 변환 (대사용)
-    let rankText = gameState.currentRank;
-    if (rankText === "A") rankText = "에이스";
-    if (rankText === "J") rankText = "조커";
-    if (rankText === "K") rankText = "킹";
-    if (rankText === "Q") rankText = "퀸";
-
-    let indicesToPlay = [];
-
-    // 진실을 말할 확률 (50% 고정 - 진짜 랜덤하게 블러핑)
-    const truthChance = 0.5;
-
-    if (validIndices.length > 0 && Math.random() < truthChance) {
-      const count = Math.min(
-        validIndices.length,
-        Math.floor(Math.random() * 3) + 1,
-      ); // 1~3장
-
-      // 데빌 카드가 포함되어 있다면 데빌 카드만 선택하도록 필터링
-      const devilIndices = validIndices.filter(
-        (idx) => aiPlayer.hand[idx].type === "D",
+      // 나 말고 다 털었으면(마지막 생존자) 무조건 도전해야 함 (카드를 내면 패배하므로)
+      const othersWithCards = players.filter(
+        (p) => !p.isDead && p !== aiPlayer && p.hand.length > 0,
       );
-      if (devilIndices.length > 0) {
-        // 데빌 카드가 있으면 데빌 카드만 냄 (AI 전략)
-        indicesToPlay = devilIndices;
-      } else {
-        indicesToPlay = validIndices.slice(0, count);
+      if (othersWithCards.length === 0) challengeChance = 1.0;
+
+      if (gameState.lastPlayedBatch && Math.random() < challengeChance) {
+        const phrases = ["거짓말!", "까봐!", "너 죽고 나죽자!"];
+        showBubble(aiIndex, phrases[Math.floor(Math.random() * phrases.length)]);
+        console.log(`${aiPlayer.name} challenges!`);
+        challenge();
+        return;
       }
 
-      // 진실 대사
-      const phrases = ["들어오시던지!", "쫄려?", "믿어줘"];
-      showBubble(aiIndex, phrases[Math.floor(Math.random() * phrases.length)]);
-    } else {
-      // 거짓말 (랜덤 카드 제출)
-      const count = Math.min(
-        aiPlayer.hand.length,
-        Math.floor(Math.random() * 3) + 1,
-      ); // 1~3장
-      // 섞어서 선택
-      const allIndices = validIndices.concat(invalidIndices);
-      // 셔플 (무작위 선택)
-      for (let i = allIndices.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [allIndices[i], allIndices[j]] = [allIndices[j], allIndices[i]];
-      }
+      // 2. 카드 제출 로직
+      // 현재 랭크와 일치하거나 조커인 카드 찾기
+      const validIndices = [];
+      const invalidIndices = [];
+      aiPlayer.hand.forEach((card, index) => {
+        if (
+          card.type === gameState.currentRank ||
+          card.type === "J" ||
+          card.type === "D"
+        ) {
+          // 데빌 카드가 있다면 데빌 카드만 따로 분류하거나 우선순위 조정 필요
+          // 여기서는 단순하게 유효 카드로 분류하되, 아래에서 섞을 때 주의
+          validIndices.push(index);
+        } else {
+          invalidIndices.push(index);
+        }
+      });
 
-      // 섞은 후 선택된 카드들에 데빌 카드가 섞여 있는지 확인
-      indicesToPlay = allIndices.slice(0, count);
-      const selectedCards = indicesToPlay.map((idx) => aiPlayer.hand[idx]);
-      const hasDevil = selectedCards.some((c) => c.type === "D");
-      if (hasDevil) {
-        // 데빌 카드가 섞였다면 데빌 카드만 남기거나 다시 선택 (여기서는 데빌만 남김)
-        indicesToPlay = indicesToPlay.filter(
+      // 랭크 텍스트 변환 (대사용)
+      let rankText = gameState.currentRank;
+      if (rankText === "A") rankText = "에이스";
+      if (rankText === "J") rankText = "조커";
+      if (rankText === "K") rankText = "킹";
+      if (rankText === "Q") rankText = "퀸";
+
+      let indicesToPlay = [];
+
+      // 진실을 말할 확률 (50% 고정 - 진짜 랜덤하게 블러핑)
+      const truthChance = 0.5;
+
+      if (validIndices.length > 0 && Math.random() < truthChance) {
+        const count = Math.min(
+          validIndices.length,
+          Math.floor(Math.random() * 3) + 1,
+        ); // 1~3장
+
+        // 데빌 카드가 포함되어 있다면 데빌 카드만 선택하도록 필터링
+        const devilIndices = validIndices.filter(
           (idx) => aiPlayer.hand[idx].type === "D",
         );
+        if (devilIndices.length > 0) {
+          // 데빌 카드가 있으면 데빌 카드만 냄 (AI 전략)
+          indicesToPlay = devilIndices;
+        } else {
+          indicesToPlay = validIndices.slice(0, count);
+        }
+
+        // 진실 대사
+        const phrases = ["들어오시던지!", "쫄려?", "믿어줘"];
+        showBubble(aiIndex, phrases[Math.floor(Math.random() * phrases.length)]);
+      } else {
+        // 거짓말 (랜덤 카드 제출)
+        const count = Math.min(
+          aiPlayer.hand.length,
+          Math.floor(Math.random() * 3) + 1,
+        ); // 1~3장
+        // 섞어서 선택
+        const allIndices = validIndices.concat(invalidIndices);
+        // 셔플 (무작위 선택)
+        for (let i = allIndices.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [allIndices[i], allIndices[j]] = [allIndices[j], allIndices[i]];
+        }
+
+        // 섞은 후 선택된 카드들에 데빌 카드가 섞여 있는지 확인
+        indicesToPlay = allIndices.slice(0, count);
+        const selectedCards = indicesToPlay.map((idx) => aiPlayer.hand[idx]);
+        const hasDevil = selectedCards.some((c) => c.type === "D");
+        if (hasDevil) {
+          // 데빌 카드가 섞였다면 데빌 카드만 남기거나 다시 선택 (여기서는 데빌만 남김)
+          indicesToPlay = indicesToPlay.filter(
+            (idx) => aiPlayer.hand[idx].type === "D",
+          );
+        }
+
+        // 블러핑 대사
+        const phrases = ["들어오시던지!", "쫄려?", "믿어줘"];
+        showBubble(aiIndex, phrases[Math.floor(Math.random() * phrases.length)]);
       }
 
-      // 블러핑 대사
-      const phrases = ["들어오시던지!", "쫄려?", "믿어줘"];
-      showBubble(aiIndex, phrases[Math.floor(Math.random() * phrases.length)]);
-    }
+      // 카드가 없으면 강제로 아무거나 냄 (규칙상 패스 없음)
+      if (indicesToPlay.length === 0 && aiPlayer.hand.length > 0) {
+        indicesToPlay.push(0);
+      }
 
-    // 카드가 없으면 강제로 아무거나 냄 (규칙상 패스 없음)
-    if (indicesToPlay.length === 0 && aiPlayer.hand.length > 0) {
-      indicesToPlay.push(0);
-    }
-
-    submitCards(aiIndex, indicesToPlay);
+      submitCards(aiIndex, indicesToPlay);
     }, 1500); // 반응 후 1.5초 대기
   }, thinkingTime);
 }
@@ -2665,6 +2676,22 @@ document.addEventListener(
   },
   { once: true },
 );
+
+// 히든 이벤트 (Shift + H)
+window.addEventListener("keydown", (e) => {
+  if (e.shiftKey && e.key.toLowerCase() === "h") {
+    const img = document.getElementById("hidden-reward");
+    if (img) {
+      img.classList.add("active");
+      gameState.targetCameraY = 200; // 시점을 아래로 이동 (화면을 위로 올림)
+
+      setTimeout(() => {
+        img.classList.remove("active");
+        gameState.targetCameraY = 0; // 시점 복구
+      }, 4000);
+    }
+  }
+});
 
 // 그리기 실행
 resizeGame();
