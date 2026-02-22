@@ -2683,12 +2683,10 @@ window.addEventListener("keydown", (e) => {
     const img = document.getElementById("hidden-reward");
     if (img) {
       img.classList.add("active");
-      gameState.targetCameraY = 200; // 시점을 아래로 이동 (화면을 위로 올림)
 
       setTimeout(() => {
         img.classList.remove("active");
-        gameState.targetCameraY = 0; // 시점 복구
-      }, 4000);
+      }, 3000);
     }
   }
 });
