@@ -2444,7 +2444,17 @@ document.getElementById("btn-restart").addEventListener("click", () => {
   }, 1000);
 });
 
-document.getElementById("btn-fullscreen").addEventListener("click", () => {
+document.getElementById("btn-fullscreen").addEventListener("click", (e) => {
+  // 한 번이라도 클릭하면 스타일을 강제로 변경하여 우상단에 고정 (모바일/작은 화면 대응)
+  const btn = e.currentTarget;
+  btn.style.position = "absolute";
+  btn.style.top = "20px";
+  btn.style.right = "20px";
+  btn.style.left = "auto";
+  btn.style.bottom = "auto";
+  btn.style.transform = "none";
+  btn.style.margin = "0";
+
   if (!document.fullscreenElement) {
     document.documentElement.requestFullscreen().catch((err) => {
       console.log(
