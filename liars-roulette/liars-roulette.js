@@ -82,7 +82,7 @@ function createDeck() {
   const types = [
     ...Array(6).fill("K"), // King
     ...Array(6).fill("Q"), // Queen
-    ...Array(6).fill("S"), // Spade
+    ...Array(6).fill("A"), // Ace
   ];
   if (Math.random() < 0.2) {
     types.push("D", "D");
@@ -107,7 +107,7 @@ const imgIds = {
   Q: "img-Q",
   J: "img-J",
   D: "img-D",
-  S: "img-S",
+  A: "img-A",
   BACK: "img-back",
   REVOLVER: "img-revolver",
   FIST: "img-fist",
@@ -1796,7 +1796,7 @@ function processAiTurn() {
 
     // 랭크 텍스트 변환 (대사용)
     let rankText = gameState.currentRank;
-    if (rankText === "S") rankText = "에이스";
+    if (rankText === "A") rankText = "에이스";
     if (rankText === "J") rankText = "조커";
     if (rankText === "K") rankText = "킹";
     if (rankText === "Q") rankText = "퀸";
@@ -2288,7 +2288,7 @@ function startRound() {
   dealingState.totalCards = survivors.length * 5;
 
   // 새 랭크 설정
-  const ranks = ["K", "Q", "S"];
+  const ranks = ["K", "Q", "A"];
   gameState.currentRank = ranks[Math.floor(Math.random() * ranks.length)];
   updateTargetDisplay();
 }
