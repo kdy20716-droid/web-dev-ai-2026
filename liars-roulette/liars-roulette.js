@@ -2460,6 +2460,13 @@ document.getElementById("btn-fullscreen").addEventListener("click", (e) => {
       console.log(
         `Error attempting to enable full-screen mode: ${err.message}`,
       );
+    document.documentElement.requestFullscreen().then(() => {
+      // 전체 화면 성공 시 가로 모드로 고정 시도
+      if (screen.orientation && screen.orientation.lock) {
+        screen.orientation.lock("landscape").catch((err) => console.log("가로 모드 고정 실패:", err));
+      }
+    }).catch((err) => {
+      console.log(`Error attempting to enable full-screen mode: ${err.message}`);
     });
   } else {
     document.exitFullscreen();
