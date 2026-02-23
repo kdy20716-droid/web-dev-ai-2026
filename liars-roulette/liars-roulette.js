@@ -2621,16 +2621,26 @@ document.addEventListener("keydown", (e) => {
   if (e.shiftKey && (e.key === "H" || e.key === "h")) {
     const hiddenReward = document.getElementById("hidden-reward");
     if (hiddenReward) {
-      // 천천히 등장 (페이드 인)
-      hiddenReward.style.opacity = "1";
+      const gameContainer = document.getElementById("game-container");
 
-      // 기존 타이머가 있다면 취소 (연타 방지)
-      if (hiddenRewardTimeout) clearTimeout(hiddenRewardTimeout);
+      if (hiddenReward && gameContainer) {
+        // 천천히 등장 (페이드 인)
+        hiddenReward.style.opacity = "1";
 
-      // 3초 뒤에 다시 사라짐 (페이드 아웃)
-      hiddenRewardTimeout = setTimeout(() => {
-        hiddenReward.style.opacity = "0";
-      }, 3000);
+        // 화면 스크롤 효과 (컨테이너를 위로 이동시켜 아래쪽 공간 보여주기)
+        gameContainer.style.transition = "transform 1s ease-in-out";
+        gameContainer.style.transform = "translateY(-300px)"; // 300px 만큼 아래를 보여줌
+
+        // 기존 타이머가 있다면 취소 (연타 방지)
+        if (hiddenRewardTimeout) clearTimeout(hiddenRewardTimeout);
+
+        // 3초 뒤에 다시 사라짐 (페이드 아웃)
+        // 3초 뒤에 다시 사라짐 (페이드 아웃 및 스크롤 복귀)
+        hiddenRewardTimeout = setTimeout(() => {
+          hiddenReward.style.opacity = "0";
+          gameContainer.style.transform = "translateY(0)"; // 원위치
+        }, 3000);
+      }
     }
   }
 });
