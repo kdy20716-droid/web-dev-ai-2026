@@ -2614,3 +2614,17 @@ setDynamicFavicon();
 
 // 그리기 실행
 draw();
+
+// 히든 이미지 치트키 (Shift + H) - 주석 해제 시 사용 가능
+document.addEventListener("keydown", (e) => {
+  if (e.shiftKey && (e.key === "H" || e.key === "h")) {
+    const hiddenReward = document.getElementById("hidden-reward");
+    if (hiddenReward) {
+      if (hiddenReward.classList.contains("hidden")) {
+        hiddenReward.classList.remove("hidden");
+      } else {
+        hiddenReward.classList.add("hidden");
+      }
+    }
+  }
+});

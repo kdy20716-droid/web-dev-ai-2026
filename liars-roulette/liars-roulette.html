@@ -127,6 +127,30 @@
 
         <!-- 메시지 오버레이 -->
         <div id="message-overlay" class="hidden"></div>
+
+        <!-- 히든 리워드 (Shift + H) - 주석 해제 시 사용 가능 -->
+        <div
+          id="hidden-reward"
+          class="hidden"
+          style="
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 9999;
+          "
+        >
+          <img
+            src="./img/breast.png"
+            alt="Hidden Reward"
+            style="
+              max-width: 80vw;
+              max-height: 80vh;
+              border-radius: 10px;
+              box-shadow: 0 0 20px #ff4081;
+            "
+          />
+        </div>
       </div>
 
       <!-- 말풍선 UI -->
