@@ -14,6 +14,12 @@ import { firebaseConfig } from "./firebaseConfig.js";
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+// 브라우저 강제 다크모드 방지 (라이트 테마 고정)
+const metaColorScheme = document.createElement("meta");
+metaColorScheme.name = "color-scheme";
+metaColorScheme.content = "light only";
+document.head.appendChild(metaColorScheme);
+
 const { Engine, Render, Runner, World, Bodies, Body, Events } = Matter;
 
 // 1. 엔진 및 렌더러 초기화

@@ -343,6 +343,16 @@ canvas {
   color: #ccc;
 }
 
+.rule-block {
+  margin-bottom: 25px;
+}
+
+.rule-block h3 {
+  color: #d4af37;
+  margin: 0 0 10px 0;
+  font-size: 20px;
+}
+
 /* 페이드 아웃 효과 */
 body.fade-out {
   opacity: 0;

@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Liars Roulette Table</title>
     <link rel="stylesheet" href="liars-roulette.css" />
+    <meta name="color-scheme" content="dark only" />
     <link rel="icon" href="data:;base64,iVBORw0KGgo=" />
   </head>
   <body>
@@ -100,26 +101,45 @@
           <div class="modal-content">
             <h2>게임 방법</h2>
             <div class="rules-text">
-              <p>
-                1. <strong>목표:</strong> 끝까지 살아남는 최후의 1인이 되세요.
-              </p>
-              <p>
-                2. <strong>진행:</strong> 자신의 턴에 목표(Target)와 같은 카드를
-                냅니다. (거짓말 가능)
-              </p>
-              <p>
-                3. <strong>의심:</strong> 다른 플레이어가 거짓말을 한다고
-                생각되면 "거짓말!" 버튼을 누르세요.
-              </p>
-              <p>4. <strong>결과:</strong></p>
-              <ul>
-                <li>검거 성공: 카드를 낸 사람이 리볼버를 당깁니다.</li>
-                <li>검거 실패(진실): 의심한 사람이 리볼버를 당깁니다.</li>
-              </ul>
-              <p>
-                5. <strong>특수 카드 (데빌):</strong> 20% 확률로 등장하며, 발동
-                시 카드를 낸 사람을 제외한 전원이 룰렛을 돌립니다.
-              </p>
+              <div class="rule-block">
+                <h3>🎯 목표</h3>
+                <p>
+                  러시안 룰렛에서 끝까지 살아남는 <strong>최후의 1인</strong>이
+                  되세요.
+                </p>
+              </div>
+              <div class="rule-block">
+                <h3>🃏 진행</h3>
+                <p>
+                  자신의 턴에 <strong>테이블에 지정된 카드(Target)</strong>를
+                  냅니다.<br />없는 카드를 있는 척 낼 수도 있습니다. (거짓말)
+                </p>
+              </div>
+              <div class="rule-block">
+                <h3>🔫 의심과 심판</h3>
+                <p>
+                  누군가 거짓말을 한 것 같다면 <strong>"거짓말!"</strong>을
+                  외치세요.
+                </p>
+                <ul>
+                  <li>
+                    <strong>검거 성공:</strong> 거짓말쟁이가 방아쇠를 당깁니다.
+                  </li>
+                  <li>
+                    <strong>검거 실패(진실):</strong> 의심한 당신이 방아쇠를
+                    당깁니다.
+                  </li>
+                </ul>
+              </div>
+              <div class="rule-block">
+                <h3>😈 데빌 카드</h3>
+                <p>
+                  <strong>단독으로만 낼 수 있습니다.</strong> (다른 카드와 섞기
+                  불가)<br />누군가 <strong>"거짓말!"</strong>을 외쳐 카드가
+                  공개되면 발동하며, <strong>제출자를 제외한 전원</strong>이
+                  룰렛을 돌립니다.
+                </p>
+              </div>
             </div>
             <button id="btn-close-howto" class="btn primary">닫기</button>
           </div>
