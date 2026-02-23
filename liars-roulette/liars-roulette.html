@@ -127,30 +127,6 @@
 
         <!-- 메시지 오버레이 -->
         <div id="message-overlay" class="hidden"></div>
-
-        <!-- 히든 리워드 (Shift + H) - 주석 해제 시 사용 가능 -->
-        <div
-          id="hidden-reward"
-          class="hidden"
-          style="
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 9999;
-          "
-        >
-          <img
-            src="./img/breast.png"
-            alt="Hidden Reward"
-            style="
-              max-width: 80vw;
-              max-height: 80vh;
-              border-radius: 10px;
-              box-shadow: 0 0 20px #ff4081;
-            "
-          />
-        </div>
       </div>
 
       <!-- 말풍선 UI -->
@@ -183,6 +159,29 @@
       <img id="img-S" src="./pokercard/스페이드 카드.png" alt="Spade" />
       <img id="img-back" src="./pokercard/포커카드 뒷면.jpg" alt="Back" />
       <img id="img-D" src="./pokercard/데빌카드.jpg" alt="Devil" />
+    </div>
+
+    <!-- 히든 리워드 (Shift + H) - 중앙 하단 페이드 -->
+    <div
+      id="hidden-reward"
+      style="
+        position: fixed;
+        /* 위아래 위치 조절: bottom 값을 변경하세요 (예: 0px는 맨 아래, 50px는 조금 더 위로) */
+        bottom: 100px;
+        left: 50%;
+        transform: translateX(-50%);
+        opacity: 0;
+        transition: opacity 1s ease-in-out;
+        z-index: 9999;
+        pointer-events: none;
+      "
+    >
+      <!-- 크기 조절: width 값을 변경하세요 (현재 80vw = 화면 너비의 80%) -->
+      <img
+        src="./pokercard/breast.png"
+        alt="Hidden Reward"
+        style="width: 25Hvw; height: auto; display: block"
+      />
     </div>
 
     <script src="liars-roulette.js"></script>

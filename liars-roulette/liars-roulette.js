@@ -2615,16 +2615,22 @@ setDynamicFavicon();
 // 그리기 실행
 draw();
 
-// 히든 이미지 치트키 (Shift + H) - 주석 해제 시 사용 가능
+// 히든 이미지 치트키 (Shift + H)
+let hiddenRewardTimeout;
 document.addEventListener("keydown", (e) => {
   if (e.shiftKey && (e.key === "H" || e.key === "h")) {
     const hiddenReward = document.getElementById("hidden-reward");
     if (hiddenReward) {
-      if (hiddenReward.classList.contains("hidden")) {
-        hiddenReward.classList.remove("hidden");
-      } else {
-        hiddenReward.classList.add("hidden");
-      }
+      // 천천히 등장 (페이드 인)
+      hiddenReward.style.opacity = "1";
+
+      // 기존 타이머가 있다면 취소 (연타 방지)
+      if (hiddenRewardTimeout) clearTimeout(hiddenRewardTimeout);
+
+      // 3초 뒤에 다시 사라짐 (페이드 아웃)
+      hiddenRewardTimeout = setTimeout(() => {
+        hiddenReward.style.opacity = "0";
+      }, 3000);
     }
   }
 });
