@@ -2456,20 +2456,28 @@ document.getElementById("btn-fullscreen").addEventListener("click", (e) => {
   btn.style.margin = "0";
 
   if (!document.fullscreenElement) {
-    document.documentElement.requestFullscreen().catch((err) => {
-      console.log(
-        `Error attempting to enable full-screen mode: ${err.message}`,
-      );
-    document.documentElement.requestFullscreen().then(() => {
-      // 전체 화면 성공 시 가로 모드로 고정 시도
-      if (screen.orientation && screen.orientation.lock) {
-        screen.orientation.lock("landscape").catch((err) => console.log("가로 모드 고정 실패:", err));
-      }
-    }).catch((err) => {
-      console.log(`Error attempting to enable full-screen mode: ${err.message}`);
-    });
+    // 브라우저가 전체 화면 기능을 지원하는지 확인 (인앱 브라우저 오류 방지)
+    if (document.documentElement.requestFullscreen) {
+      document.documentElement
+        .requestFullscreen()
+        .then(() => {
+          // 전체 화면 성공 시 가로 모드로 고정 시도
+          if (screen.orientation && screen.orientation.lock) {
+            screen.orientation
+              .lock("landscape")
+              .catch((err) => console.log("가로 모드 고정 실패:", err));
+          }
+        })
+        .catch((err) => {
+          console.log(
+            `Error attempting to enable full-screen mode: ${err.message}`,
+          );
+        });
+    }
   } else {
-    document.exitFullscreen();
+    if (document.exitFullscreen) {
+      document.exitFullscreen();
+    }
   }
 });
 
