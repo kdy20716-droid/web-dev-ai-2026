@@ -28,6 +28,15 @@ for (let i = 0; i < 50; i++) {
 
 // 폭죽 입자 관리
 const fireworks = [];
+const embers = []; // 불티 입자 관리
+
+// 데빌 카드 등장 애니메이션 상태
+const devilCardAnim = {
+  active: false,
+  phase: "IDLE", // IDLE, ENTER, STAY, EXIT
+  progress: 0,
+  timer: 0,
+};
 
 // 게임 상태 및 플레이어 설정
 const centerX = canvas.width / 2;
@@ -519,8 +528,58 @@ function draw() {
       floorColor = `rgb(${Math.floor(80 * intensity)}, 0, 0)`;
       lightColor = `rgba(255, 0, 0, ${0.6 * intensity})`;
 
+      // 1. 타오르는 불길 그라디언트 (화면 하단에서 위로)
+      const wave = Math.sin(Date.now() * 0.01) * 50;
+      const fireHeight = canvas.height * 0.6 + wave; // 화면 60% 높이까지
+
+      const fireGrad = ctx.createLinearGradient(
+        0,
+        canvas.height,
+        0,
+        canvas.height - fireHeight,
+      );
+      fireGrad.addColorStop(0, `rgba(255, 60, 0, ${0.9 * intensity})`); // 하단: 강렬한 주황/빨강
+      fireGrad.addColorStop(0.4, `rgba(180, 0, 0, ${0.6 * intensity})`); // 중단: 어두운 빨강
+      fireGrad.addColorStop(1, "rgba(0, 0, 0, 0)"); // 상단: 투명
+
+      ctx.fillStyle = fireGrad;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // 2. 흩날리는 불티 (Embers)
+      // 생성
+      for (let i = 0; i < 5; i++) {
+        embers.push({
+          x: Math.random() * canvas.width,
+          y: canvas.height + 10,
+          vx: (Math.random() - 0.5) * 2,
+          vy: -(Math.random() * 4 + 3), // 위로 빠르게 올라감
+          size: Math.random() * 3 + 1,
+          alpha: 1,
+          decay: Math.random() * 0.02 + 0.01,
+        });
+      }
+
+      // 업데이트 및 그리기
+      for (let i = embers.length - 1; i >= 0; i--) {
+        const e = embers[i];
+        e.x += e.vx + Math.sin(Date.now() * 0.01 + e.y * 0.02); // 일렁임
+        e.y += e.vy;
+        e.alpha -= e.decay;
+
+        if (e.alpha <= 0 || e.y < -50) {
+          embers.splice(i, 1);
+          continue;
+        }
+
+        ctx.fillStyle = `rgba(255, 220, 100, ${e.alpha * intensity})`;
+        ctx.beginPath();
+        ctx.arc(e.x, e.y, e.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
       // 초기 5프레임 동안 강력한 화이트 플래시 (총구 화염 느낌)
-      if (gameState.lightingTimer > 55) {
+      // 데빌 카드 연출(120프레임)일 때는 생략하고, 총격(60프레임)일 때만 표시
+      if (gameState.lightingTimer > 55 && gameState.lightingTimer <= 60) {
         ctx.fillStyle = `rgba(255, 255, 255, ${(gameState.lightingTimer - 55) / 5})`;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
       }
@@ -548,6 +607,7 @@ function draw() {
       }
     } else {
       gameState.lighting = "NORMAL";
+      embers.length = 0; // 불티 초기화
     }
   } else if (gameState.lighting === "FLICKER") {
     // 생존 시 깜빡임
@@ -836,6 +896,9 @@ function draw() {
   // 7. 폭죽 애니메이션
   updateAndDrawFireworks();
 
+  // 8. 데빌 카드 등장 애니메이션
+  updateAndDrawDevilCardAnim();
+
   requestAnimationFrame(draw);
 }
 
@@ -997,6 +1060,69 @@ function updateAndDrawFireworks() {
     ctx.fill();
   }
   ctx.globalAlpha = 1.0;
+}
+
+function triggerDevilCardAnimation() {
+  devilCardAnim.active = true;
+  devilCardAnim.phase = "ENTER";
+  devilCardAnim.progress = 0;
+  devilCardAnim.timer = 0;
+}
+
+function updateAndDrawDevilCardAnim() {
+  if (!devilCardAnim.active) return;
+
+  // 화면 오른쪽 아래 좌표 설정
+  const startX = canvas.width + 150;
+  const startY = canvas.height + 200;
+  const endX = canvas.width - 150;
+  const endY = canvas.height - 150;
+
+  if (devilCardAnim.phase === "ENTER") {
+    devilCardAnim.progress += 0.04; // 속도 조절
+    if (devilCardAnim.progress >= 1) {
+      devilCardAnim.progress = 1;
+      devilCardAnim.phase = "STAY";
+      devilCardAnim.timer = 90; // 1.5초 유지
+    }
+  } else if (devilCardAnim.phase === "STAY") {
+    devilCardAnim.timer--;
+    if (devilCardAnim.timer <= 0) {
+      devilCardAnim.phase = "EXIT";
+    }
+  } else if (devilCardAnim.phase === "EXIT") {
+    devilCardAnim.progress -= 0.04;
+    if (devilCardAnim.progress <= 0) {
+      devilCardAnim.progress = 0;
+      devilCardAnim.active = false;
+      devilCardAnim.phase = "IDLE";
+      return;
+    }
+  }
+
+  // Easing 함수 (Cubic Out)
+  const t = devilCardAnim.progress;
+  const ease = 1 - Math.pow(1 - t, 3);
+
+  const curX = startX + (endX - startX) * ease;
+  const curY = startY + (endY - startY) * ease;
+  const rotation = 0.5 - ease * 0.8; // 등장하면서 회전
+
+  ctx.save();
+  ctx.translate(curX, curY);
+  ctx.rotate(rotation);
+
+  // 붉은색 후광 효과
+  ctx.shadowColor = "rgba(255, 0, 0, 0.8)";
+  ctx.shadowBlur = 40;
+
+  // 3배 확대
+  ctx.scale(3, 3);
+
+  // 카드 그리기 (좌표 0,0 기준)
+  drawFrontCard(0, 0, 0, "D");
+
+  ctx.restore();
 }
 
 // 단일 카드 뒷면 그리기 (이동 및 손패용)
@@ -2267,7 +2393,19 @@ function startRound() {
   // 데빌 카드 존재 여부 확인 및 알림
   if (cardTypes.includes("D")) {
     playSound("devil");
-    showMessage("데빌카드가 존재합니다", 200);
+    const statusEl = document.getElementById("game-status");
+    if (statusEl) {
+      statusEl.textContent = "데빌카드가 존재합니다";
+      statusEl.style.color = "#c62828";
+      statusEl.classList.remove("hidden");
+    }
+    const hudEl = document.getElementById("game-hud");
+    if (hudEl) hudEl.classList.remove("hidden");
+
+    // 데빌 카드 등장 시 붉은 섬광 효과
+    gameState.lighting = "RED_FLASH";
+    gameState.lightingTimer = 120; // 효과 지속 시간 2배로 증가 (2초)
+    triggerDevilCardAnimation();
   }
 
   // 생존자들에게 카드 다시 배분 (기존 핸드 초기화)
@@ -2394,9 +2532,8 @@ document.getElementById("btn-start").addEventListener("click", () => {
     audioCtx.resume();
   }
 
-  gameState.phase = "DEALING";
   playSound("select");
-  playBGM("main");
+  startRound(); // 게임 시작 시에도 라운드 초기화 로직(데빌 카드 체크 등)을 실행하도록 변경
 });
 
 // 게임 방법 버튼 이벤트
