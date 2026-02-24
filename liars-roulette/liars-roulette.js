@@ -93,7 +93,8 @@ function createDeck() {
     ...Array(6).fill("Q"), // Queen
     ...Array(6).fill("A"), // Ace
   ];
-  if (Math.random() < 0.2) {
+  // 모바일 테스트를 위해 확률 상향 (20% -> 50%)
+  if (Math.random() < 1) {
     types.push("D", "D");
     console.log("Devil cards added to deck!");
   } else {
@@ -2713,7 +2714,11 @@ document.getElementById("btn-fullscreen").addEventListener("click", (e) => {
       .requestFullscreen()
       .then(() => {
         if (container) container.classList.add("fullscreen");
+
+        // 즉시 리사이즈 및 지연 리사이즈 (모바일 화면 전환/회전 딜레이 대응)
         resizeGame();
+        setTimeout(resizeGame, 500);
+
         // 모바일에서 전체화면 시 가로 모드 고정
         if (screen.orientation && screen.orientation.lock) {
           screen.orientation.lock("landscape").catch((err) => {
@@ -2743,8 +2748,15 @@ function resizeGame() {
   const container = document.getElementById("game-container");
   if (!container) return;
 
-  const winW = window.innerWidth;
-  const winH = window.innerHeight;
+  let winW = window.innerWidth;
+  let winH = window.innerHeight;
+
+  // 모바일 브라우저 주소창/하단바 대응 (Visual Viewport API 사용)
+  if (window.visualViewport) {
+    winW = window.visualViewport.width;
+    winH = window.visualViewport.height;
+  }
+
   const baseHeight = 900;
 
   // 1. 화면 비율에 맞춰 캔버스 너비 동적 계산 (최소 1024px 유지)
@@ -2768,6 +2780,10 @@ function resizeGame() {
 }
 
 window.addEventListener("resize", resizeGame);
+if (window.visualViewport) {
+  // 모바일 키보드/주소창 변경 등에 대응
+  window.visualViewport.addEventListener("resize", resizeGame);
+}
 
 // 레이아웃 업데이트 함수 (화면 크기 변경 시 호출)
 function updateLayout() {
