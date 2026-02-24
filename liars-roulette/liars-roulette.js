@@ -39,9 +39,9 @@ const devilCardAnim = {
 };
 
 // 게임 상태 및 플레이어 설정
-const centerX = canvas.width / 2;
-const centerY = canvas.height / 2;
-const tableY = centerY + 30;
+let centerX = canvas.width / 2;
+let centerY = canvas.height / 2;
+let tableY = centerY + 30;
 
 const players = [
   {
@@ -98,6 +98,7 @@ function createDeck() {
     console.log("Devil cards added to deck!");
   } else {
     types.push("J", "J");
+    console.log("Joker cards added to deck.");
   }
   // Fisher-Yates Shuffle
   for (let i = types.length - 1; i > 0; i--) {
@@ -107,7 +108,7 @@ function createDeck() {
   return types;
 }
 
-let cardTypes = createDeck();
+let cardTypes = [];
 
 // 카드 이미지 로드 (HTML에 있는 img 태그 가져오기)
 const cardImages = {};
@@ -179,7 +180,6 @@ const SoundGen = {
     noiseFilter.frequency.exponentialRampToValueAtTime(100, t + 0.5);
     const noiseGain = audioCtx.createGain();
     noiseGain.gain.setValueAtTime(1, t);
-    noiseGain.gain.setValueAtTime(1, t); // [사운드 조절] 총 폭발음 볼륨 (0.0 ~ 1.0)
     noiseGain.gain.exponentialRampToValueAtTime(0.01, t + 0.5);
     noise.connect(noiseFilter);
     noiseFilter.connect(noiseGain);
@@ -194,7 +194,6 @@ const SoundGen = {
     osc.frequency.exponentialRampToValueAtTime(0.01, t + 0.5);
     const oscGain = audioCtx.createGain();
     oscGain.gain.setValueAtTime(1, t);
-    oscGain.gain.setValueAtTime(1, t); // [사운드 조절] 총 타격음 볼륨 (0.0 ~ 1.0)
     oscGain.gain.exponentialRampToValueAtTime(0.01, t + 0.5);
     osc.connect(oscGain);
     oscGain.connect(masterGain);
@@ -281,7 +280,6 @@ const SoundGen = {
     osc.type = "sine";
     osc.frequency.setValueAtTime(600, t);
     const gain = audioCtx.createGain();
-    gain.gain.setValueAtTime(0.1, t);
     gain.gain.setValueAtTime(0.1, t); // [사운드 조절] 카드 선택 효과음 볼륨 (기본: 0.1)
     gain.gain.exponentialRampToValueAtTime(0.01, t + 0.05);
     osc.connect(gain);
@@ -462,17 +460,14 @@ function playBGM(type) {
       rouletteBgm.currentTime = 0;
     }
     if (mainBgm) {
-      mainBgm.volume = vol;
       mainBgm.volume = bgmVol;
       if (mainBgm.paused) mainBgm.play().catch(() => {});
     }
   } else if (type === "roulette") {
     if (mainBgm) {
       mainBgm.pause();
-      // mainBgm.currentTime = 0; // 메인 BGM 초기화 제거 (이어서 재생하기 위해)
     }
     if (rouletteBgm) {
-      rouletteBgm.volume = vol;
       rouletteBgm.volume = bgmVol;
       if (rouletteBgm.paused) rouletteBgm.play().catch(() => {});
     }
@@ -501,7 +496,24 @@ const gameState = {
   bloodSplatters: [], // 피자국 데이터 {x, y, points, color, scaleX, scaleY, rotation}
   rouletteQueue: [], // 데빌 카드 발동 시 룰렛 대기열
   rouletteStartTime: 0, // 룰렛 애니메이션 시작 시간
+  activeTimeouts: [], // 활성화된 타임아웃 ID 관리
 };
+
+// 타임아웃 관리 헬퍼 함수 (게임 리셋 시 취소 가능하도록)
+function addTimeout(callback, delay) {
+  const id = setTimeout(() => {
+    callback();
+    const index = gameState.activeTimeouts.indexOf(id);
+    if (index > -1) gameState.activeTimeouts.splice(index, 1);
+  }, delay);
+  gameState.activeTimeouts.push(id);
+  return id;
+}
+
+function clearAllTimeouts() {
+  gameState.activeTimeouts.forEach((id) => clearTimeout(id));
+  gameState.activeTimeouts = [];
+}
 
 function draw() {
   // 카드 배분 로직 업데이트
@@ -985,9 +997,9 @@ function updateDealing() {
 
       // 모든 카드가 배분되면 남쪽 플레이어(인덱스 3) 카드 뒤집기
       if (dealingState.dealtCount >= dealingState.totalCards) {
-        setTimeout(() => {
+        addTimeout(() => {
           players[3].hand.forEach((card, i) => {
-            setTimeout(() => {
+            addTimeout(() => {
               card.isFlipping = true;
             }, i * 200); // 순차적으로 뒤집기
           });
@@ -1840,7 +1852,7 @@ function submitCards(playerIndex, cardIndices) {
     const loser = players[playerIndex];
     console.log(`${loser.name} is the last one playing cards!`);
     showMessage(`${loser.displayName}이(가) 카드를 모두 털지 못했습니다!`, 150);
-    setTimeout(() => triggerRussianRoulette(loser), 2000);
+    addTimeout(() => triggerRussianRoulette(loser), 2000);
     return; // 턴 넘기지 않고 종료
   }
 
@@ -1894,7 +1906,7 @@ function processAiTurn() {
   // 고민하는 시간 랜덤 설정 (2초 ~ 4초) - 템포 조절
   const thinkingTime = Math.random() * 2000 + 2000;
 
-  setTimeout(() => {
+  addTimeout(() => {
     // 상대방이 카드를 냈을 때 반응 (50% 확률)
     if (gameState.lastPlayedBatch && Math.random() < 0.5) {
       const reactionPhrases = ["의심스러운데...", "설마?", "자신있어?"];
@@ -1904,10 +1916,10 @@ function processAiTurn() {
       );
     }
 
-    setTimeout(() => {
+    addTimeout(() => {
       // 1. 도전(Liar) 여부 결정 (이전 플레이어가 카드를 냈을 경우)
-      // 20% 확률로 도전 + 턴이 지날수록 5%씩 증가
-      let challengeChance = 0.2 + gameState.turnCount * 0.05;
+      // 기본 20% + 테이블에 쌓인 카드 1장당 1% 증가
+      let challengeChance = 0.2 + gameState.tableCards.length * 0.01;
 
       // 나 말고 다 털었으면(마지막 생존자) 무조건 도전해야 함 (카드를 내면 패배하므로)
       const othersWithCards = players.filter(
@@ -2071,7 +2083,7 @@ function challenge() {
   if (isLie) {
     console.log("It was a LIE! Submitter loses.");
     loser = submitter;
-    setTimeout(() => {
+    addTimeout(() => {
       const winPhrases = ["거봐!", "그럴줄 알았다", "잘가"];
       showBubble(
         gameState.turnIndex,
@@ -2081,7 +2093,7 @@ function challenge() {
   } else {
     console.log("It was TRUE! Challenger loses.");
     loser = challenger;
-    setTimeout(() => {
+    addTimeout(() => {
       const losePhrases = ["말도 안돼...", "젠장!", "FUCK!"];
       showBubble(
         gameState.turnIndex,
@@ -2095,7 +2107,7 @@ function challenge() {
 
   showMessage(isLie ? "거짓말!" : "진실!", 100);
 
-  setTimeout(() => {
+  addTimeout(() => {
     triggerRussianRoulette(loser);
   }, 2000);
 }
@@ -2117,7 +2129,7 @@ function handleDevilEffect(submitter) {
   const victims = players.filter((p) => !p.isDead && p !== submitter);
 
   // 동시 격발 함수 호출
-  setTimeout(() => {
+  addTimeout(() => {
     triggerSimultaneousRoulette(victims);
   }, 2000);
 }
@@ -2155,22 +2167,22 @@ function triggerRussianRoulette(victim, onComplete = null) {
   );
 
   // 2. 철컥 (2초)
-  setTimeout(() => {
+  addTimeout(() => {
     playSound("cock"); // 기계음 (철컥)
     showMessage("철컥", 120);
   }, 2000);
 
   // 3. 방아쇠를 당겨주세요 (4초)
-  setTimeout(() => {
+  addTimeout(() => {
     showMessage("방아쇠를 당겨주세요", 180);
   }, 4000);
 
   // 4. ... (7초)
-  setTimeout(() => {
+  addTimeout(() => {
     showMessage("...", 180);
   }, 7000);
 
-  setTimeout(() => {
+  addTimeout(() => {
     // 발사 로직 (1/6 확률, 실제로는 챔버가 돌아감)
     const isBang = revolver.currentChamber === revolver.bulletPosition;
     revolver.currentChamber = (revolver.currentChamber + 1) % revolver.chambers;
@@ -2258,7 +2270,7 @@ function triggerRussianRoulette(victim, onComplete = null) {
       }
 
       // 사망 처리 후 게임 상태 확인
-      setTimeout(() => {
+      addTimeout(() => {
         if (onComplete) {
           onComplete();
         } else {
@@ -2275,7 +2287,7 @@ function triggerRussianRoulette(victim, onComplete = null) {
         survivePhrases[Math.floor(Math.random() * survivePhrases.length)],
       );
       gameState.lightingTimer = 30;
-      setTimeout(() => {
+      addTimeout(() => {
         if (onComplete) {
           onComplete();
         } else {
@@ -2302,23 +2314,23 @@ function triggerSimultaneousRoulette(victims) {
   showMessage("모두가 룰렛에 당첨되었습니다!", 120);
 
   // 2. 철컥
-  setTimeout(() => {
+  addTimeout(() => {
     playSound("cock");
     showMessage("철컥", 120);
   }, 2000);
 
   // 3. 방아쇠
-  setTimeout(() => {
+  addTimeout(() => {
     showMessage("방아쇠를 당겨주세요", 180);
   }, 4000);
 
   // 4. ...
-  setTimeout(() => {
+  addTimeout(() => {
     showMessage("...", 180);
   }, 7000);
 
   // 5. 결과 확인 (동시)
-  setTimeout(() => {
+  addTimeout(() => {
     let anyDeath = false;
     const deadVictims = [];
 
@@ -2368,7 +2380,7 @@ function triggerSimultaneousRoulette(victims) {
       gameState.lightingTimer = 30;
     }
 
-    setTimeout(() => {
+    addTimeout(() => {
       checkWinCondition();
     }, 2000);
   }, 10000);
@@ -2438,6 +2450,16 @@ function checkWinCondition() {
 }
 
 function startRound() {
+  clearAllTimeouts(); // 게임 시작/재시작 시 예약된 모든 연출 취소
+
+  // 팝업 타이머 초기화 (이전 팝업이 남아있다면 제거)
+  if (popupTimeout) {
+    clearTimeout(popupTimeout);
+    popupTimeout = null;
+    const popup = document.getElementById("target-popup");
+    if (popup) popup.classList.add("hidden");
+  }
+
   // 테이블 초기화
   gameState.tableCards = [];
   gameState.lastPlayedBatch = null;
@@ -2507,6 +2529,7 @@ function startRound() {
 }
 
 let messageTimeout = null;
+let popupTimeout = null;
 function showMessage(text, duration) {
   const overlay = document.getElementById("message-overlay");
   overlay.textContent = text;
@@ -2533,11 +2556,14 @@ function showDevilPopup() {
       popupImg.src = sourceImg.src;
       popupText.textContent = "데빌카드가 존재합니다";
       popupText.style.color = "#c62828";
+
+      if (popupTimeout) clearTimeout(popupTimeout);
       popup.classList.remove("hidden");
 
-      setTimeout(() => {
+      popupTimeout = setTimeout(() => {
         popup.classList.add("hidden");
         popupText.style.color = "";
+        popupTimeout = null;
       }, 2000);
     }
   }
@@ -2563,11 +2589,14 @@ function updateTargetDisplay() {
     if (sourceImg) {
       popupImg.src = sourceImg.src;
       popupText.textContent = `Target: ${rank}`;
+
+      if (popupTimeout) clearTimeout(popupTimeout);
       popup.classList.remove("hidden");
 
       // 2초 후 사라짐
-      setTimeout(() => {
+      popupTimeout = setTimeout(() => {
         popup.classList.add("hidden");
+        popupTimeout = null;
       }, 2000);
     }
   }
@@ -2600,15 +2629,15 @@ function showGameOver(isWin) {
 
     // 승리 효과: 환호성 및 폭죽 3개
     playSound("cheer");
-    setTimeout(
+    addTimeout(
       () => createFirework(canvas.width * 0.3, canvas.height * 0.3),
       0,
     );
-    setTimeout(
+    addTimeout(
       () => createFirework(canvas.width * 0.7, canvas.height * 0.3),
       400,
     );
-    setTimeout(
+    addTimeout(
       () => createFirework(canvas.width * 0.5, canvas.height * 0.2),
       800,
     );
@@ -2714,27 +2743,50 @@ function resizeGame() {
   const container = document.getElementById("game-container");
   if (!container) return;
 
-  const targetRatio = 1024 / 900;
-  const windowWidth = window.innerWidth;
-  const windowHeight = window.innerHeight;
-  const windowRatio = windowWidth / windowHeight;
+  const winW = window.innerWidth;
+  const winH = window.innerHeight;
+  const baseHeight = 900;
 
-  if (windowRatio > targetRatio) {
-    // 화면이 더 넓음 -> 높이에 맞춤
-    container.style.width = `${windowHeight * targetRatio}px`;
-    container.style.height = `${windowHeight}px`;
-  } else {
-    // 화면이 더 좁음 -> 너비에 맞춤
-    container.style.width = `${windowWidth}px`;
-    container.style.height = `${windowWidth / targetRatio}px`;
-  }
+  // 1. 화면 비율에 맞춰 캔버스 너비 동적 계산 (최소 1024px 유지)
+  // 가로가 긴 모바일 화면에서 여백 없이 꽉 채우기 위함
+  let newCanvasWidth = (winW / winH) * baseHeight;
+  if (newCanvasWidth < 1024) newCanvasWidth = 1024;
 
-  // UI 스케일링을 위한 CSS 변수 설정 (기준 너비 1024px)
-  const scale = parseFloat(container.style.width) / 1024;
+  // 2. 캔버스 및 컨테이너 크기 업데이트
+  canvas.width = newCanvasWidth;
+  canvas.height = baseHeight;
+  container.style.width = `${newCanvasWidth}px`;
+  container.style.height = `${baseHeight}px`;
+
+  // 3. 윈도우 크기에 맞춰 스케일링 (Fit)
+  const scale = Math.min(winW / newCanvasWidth, winH / baseHeight);
+  container.style.transform = `scale(${scale})`;
   container.style.setProperty("--game-scale", scale);
+
+  // 4. 게임 내부 레이아웃 재정렬 (중앙 정렬 유지)
+  updateLayout();
 }
 
 window.addEventListener("resize", resizeGame);
+
+// 레이아웃 업데이트 함수 (화면 크기 변경 시 호출)
+function updateLayout() {
+  centerX = canvas.width / 2;
+  centerY = canvas.height / 2;
+  tableY = centerY + 30;
+
+  // 플레이어 위치 재설정 (중앙 기준 상대 위치 유지)
+  if (players.length > 0) {
+    players[0].x = centerX + 430;
+    players[0].y = tableY; // East
+    players[1].x = centerX;
+    players[1].y = tableY - 280; // North
+    players[2].x = centerX - 430;
+    players[2].y = tableY; // West
+    players[3].x = centerX;
+    players[3].y = tableY + 280; // South
+  }
+}
 
 // --- 사운드 컨트롤 이벤트 ---
 const btnMute = document.getElementById("btn-mute");
@@ -2878,47 +2930,6 @@ window.addEventListener("load", () => {
   });
 });
 
-// 오디오 리소스 미리 로드 (재생 지연 방지)
-window.addEventListener("load", () => {
-  const preloadIds = ["sfx-cock", "sfx-click", "sfx-gun", "sfx-devil"];
-  preloadIds.forEach((id) => {
-    const el = document.getElementById(id);
-    if (el) {
-      el.load();
-    }
-  });
-});
-
-// 그리기 실행
+// 게임 루프 시작
 resizeGame();
 draw();
-
-// 히든 이미지 치트키 (Shift + H)
-let hiddenRewardTimeout;
-document.addEventListener("keydown", (e) => {
-  if (e.shiftKey && (e.key === "H" || e.key === "h")) {
-    const hiddenReward = document.getElementById("hidden-reward");
-    if (hiddenReward) {
-      const gameContainer = document.getElementById("game-container");
-
-      if (hiddenReward && gameContainer) {
-        // 천천히 등장 (페이드 인)
-        hiddenReward.style.opacity = "1";
-
-        // 화면 스크롤 효과 (컨테이너를 위로 이동시켜 아래쪽 공간 보여주기)
-        gameContainer.style.transition = "transform 1s ease-in-out";
-        gameContainer.style.transform = "translateY(-300px)"; // 300px 만큼 아래를 보여줌
-
-        // 기존 타이머가 있다면 취소 (연타 방지)
-        if (hiddenRewardTimeout) clearTimeout(hiddenRewardTimeout);
-
-        // 3초 뒤에 다시 사라짐 (페이드 아웃)
-        // 3초 뒤에 다시 사라짐 (페이드 아웃 및 스크롤 복귀)
-        hiddenRewardTimeout = setTimeout(() => {
-          hiddenReward.style.opacity = "0";
-          gameContainer.style.transform = "translateY(0)"; // 원위치
-        }, 3000);
-      }
-    }
-  }
-});
