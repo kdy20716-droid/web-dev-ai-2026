@@ -93,8 +93,8 @@ function createDeck() {
     ...Array(6).fill("Q"), // Queen
     ...Array(6).fill("A"), // Ace
   ];
-  // 모바일 테스트를 위해 확률 상향 (20% -> 50%)
-  if (Math.random() < 1) {
+  // 데빌 확률 20%
+  if (Math.random() < 0.2) {
     types.push("D", "D");
     console.log("Devil cards added to deck!");
   } else {
