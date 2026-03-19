@@ -40,5 +40,18 @@
 -- 스키마 생성
 CREATE DATABASE sample; -- MYSQL에서는 DATABASE랑 SCHEMA를 같은 뜻
 CREATE SCHEMA cocktail;
-
-
+/*
+    CREATE TABLE 테이블명(
+		컬럼명 자료형(크기),
+        컬럼명 자료형(크기), ...
+	);
+    - 엔티티(Entity) : 같은 성격을 가진 데이터를 묶어놓는 큰 주제
+    - 테이블 : 같은 성격의 데이터를 모아두는 곳
+    - 컬럼 : 테이블 안에서 각 정보의 종류를 구분하는 칸
+	
+*/
+CREATE TABLE recipes(
+    name VARCHAR(50),
+    image VARCHAR(200),
+    descrpition TEXT
+);
