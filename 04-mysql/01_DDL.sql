@@ -45,13 +45,53 @@ CREATE SCHEMA cocktail;
 		컬럼명 자료형(크기),
         컬럼명 자료형(크기), ...
 	);
+
+    * 자료형
+        1. 문자 :
+            - CHAR / **VARCHAR** : 고정 및 가변 길이 문자, 반드시 크기 지정
+            - TEXT : 매우 긴 문자열을 저장하는데 사용
+        2. 숫자 :
+            - **INT** : 정수값 저장하는데 사용
+            - FLOAT / DOUBLE : 부동소수점 저장하는데 사용
+            - DECIMAL : 고정소수점 저장하는데 사용
+        3. 날짜 :
+            - **DATE** : 날짜 저장하는데 사용
+            - TIME : 시간 저장하는데 사용
+            - DATETIME / TIMESTAMP : 날짜와 시간을 함께 저장하는데 사용
+        4. 불리언
+            - BOOLEAN / BOOL : 참(True) 또는 거짓(False) 값을 저장하는데 사용
+        5. 이진 데이터
+            - BLOB : 이진 데이터를 저장하는데 사용, 이미지나 동영상과 같은 이진 파일
+            -> 실제로는 이미지나 동영상은 따로 관리 (URL로 문자형으로 저장)
+
     - 엔티티(Entity) : 같은 성격을 가진 데이터를 묶어놓는 큰 주제
     - 테이블 : 같은 성격의 데이터를 모아두는 곳
     - 컬럼 : 테이블 안에서 각 정보의 종류를 구분하는 칸
-	
+    - 레코드(data) : 실제 저장된 데이터 한 줄
+
+    * 데이터 모델링
+    1. 개념적 모델링 : 어떤 정보가 필요한지 큰 묶음으로 정리
+        ex) recipes, users
+    2. 논리적 모델링 : 각 묶음에 어떤 컬럼이 필요한지 정리
+        ex) recipes(name, image, descrpition)  
+    3. 물리적 모델링 : 실제 DB에서 자료형과 제약조건까지 정해서 CREATE TABLE로 작성
+        ex) name VARCHAR(50)
 */
 CREATE TABLE recipes(
     name VARCHAR(50),
     image VARCHAR(200),
     descrpition TEXT
 );
+CREATE TABLE users(
+    id VARCHAR(50),
+    email VARCHAR(200),
+    name VARCHAR(50),
+    gender CHAR(1),
+    password VARCHAR(200),
+    nickname VARCHAR(100),
+    phone VARCHAR(20),
+    address VARCHAR(200),
+    birth DATE
+);
+-- 아이디, 이메일, 이름, 성별, 비밀번호, 닉네임, 전화번호, 주소, 생년월일
+
