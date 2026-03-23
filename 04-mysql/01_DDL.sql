@@ -210,6 +210,7 @@ SELECT * FROM recipes;
 */
 
 DROP TABLE users;
+DROP TABLE recipes;
 
 CREATE TABLE recipes(
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -221,7 +222,10 @@ CREATE TABLE recipes(
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
 );
 INSERT INTO recipes(user_id, name, image, descrpition)
-VALUES(2, '미나리 소주', 'localhost:3000/soju.jpg', 
+VALUES(3, '미나리 소주', 'localhost:3000/soju.jpg', 
 '요리하는 돌아이 윤남노 셰프가 방송에서 만든 미나리 소주');
-
+DELETE FROM users WHERE id = 3;
 SELECT * FROM recipes;
+SELECT * FROM users;
+
+
