@@ -93,5 +93,135 @@ CREATE TABLE users(
     address VARCHAR(200),
     birth DATE
 );
+-- 제약조건(CONSRAINT) : 데이터 무결성을 지키기 위한 규칙
+CREATE TABLE CONSTRAINT(
+    id VARCHAR(50),
+    email VARCHAR(200)
+    password VARCHAR(200)
+);
+
+-- DROP : 삭제
+DROP TABLE users(
+    id VARCHAR(50),
+    email VARCHAR(200),
+    password VARCHAR(200),
+)
+
+-- 제약조건(CONSTRAINT) : 데이터 무결성을 지키기 위한 규칙
 -- 아이디, 이메일, 이름, 성별, 비밀번호, 닉네임, 전화번호, 주소, 생년월일
 
+SELECT * FROM users; -- 조회
+
+INSERT INTO users VALUES('user1', 'user01@google,com', 'pass01'); -- 데이터 등록 
+INSERT INTO users VALUES(NULL, NULL, NULL) -- 값 없는것도 등록 됨 
+INSERT INTO users VALUES('user1', 'user01@google,com', NULL);
+
+-- NOT NULL : NULL 값을 허용 X, 반드시 값이 있어야 한다
+-- 제약조건(CONSRAINT) : 데이터 무결성을 지키기 위한 규칙
+CREATE TABLE users(
+    id VARCHAR(50) NOT NULL,
+    email VARCHAR(200) NOT NULL,
+    password VARCHAR(200) NOT NULL
+);
+SELECT * FROM users;
+
+INSERT INTO users VALUES('user1', 'user01@google,com', 'pass01');
+
+-- UNIQUE : 중복된 값은 허용 X 
+
+DROP TABLE users;
+
+CREATE TABLE users(
+    id VARCHAR(50) NOT NULL UNIQUE,
+    email VARCHAR(200) NOT NULL UNIQUE,
+    password VARCHAR(200) NOT NULL
+);
+SELECT * FROM users;
+INSERT INTO users VALUES('user1', 'user01@google,com', 'pass01');
+INSERT INTO users VALUES('user2', 'user02@google,com', 'pass01');
+INSERT INTO users VALUES(NULL, 'user03@google,com', 'pass01');
+
+-- PRIMARY KEY : 각 레코드를 구분하는 대표값. 중복 X + NULL X
+DROP TABLE users;
+DROP TABLE recipes;
+
+CREATE TABLE users(
+    id VARCHAR(50) PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(200) NOT NULL UNIQUE,
+    password VARCHAR(200) NOT NULL
+);
+
+-- 1. 첫 번째 유저 데이터 넣기
+INSERT INTO users (name, email, password) 
+VALUES('유저01', 'user01@google.com', 'pass01');
+
+-- 2. 두 번째 유저 데이터 넣기
+INSERT INTO users (name, email, password) 
+VALUES('유저02', 'user02@google.com', 'pass01');
+
+-- 3. 데이터가 잘 들어갔는지 표(Grid)로 확인하기
+SELECT * FROM users;
+
+-- FOREIGN : 다른 테이블과 연결할 때 사용
+CREATE TABLE recipes(
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    name VARCHAR(50) NOT NULL,
+    image VARCHAR(200) NOT NULL,
+    descrpition TEXT NOT NULL
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+INSERT INTO recipes (user_id, name, image, descrpition)
+VALUES(2, '미나리 소주', 'localhost:3000/soju.jpg', 
+'요리하는 돌아이 윤남노 셰프가 방송에서 만든 미나리 소주')
+
+SELECT * FROM users;
+SELECT * FROM recipes;
+
+
+-- DEFAULT : 제약조건 X, 값을 직접 넣지 않고 자동으로 들어갈 기본값
+DROP TABLE recipes;
+DROP TABLE users;
+
+CREATE TABLE recipes(
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    name VARCHAR(50) NOT NULL,
+    image VARCHAR(200) NOT NULL,
+    descrpition TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+INSERT INTO recipes(user_id, name, image, descrpition)
+VALUES(2, '미나리 소주', 'localhost:3000/soju.jpg', 
+'요리하는 돌아이 윤남노 셰프가 방송에서 만든 미나리 소주');
+
+SELECT * FROM recipes;
+
+/*
+    외래키 삭제 옵션 : 
+    부모 테이블의 데이터를 삭제할 시 그 값을 참조하는 자식 테이블 데이터를 어떻게 할지
+
+    - ON DELETE RESTRICT (기본값) : 자식 테이블에서 사용 중인 부모 테이터는 삭제 X
+    - ON DELETE SET NULL : 부모 데이터를 삭제하면 자식 테이블의 FX 값을 NULL로 변경
+    - ON DELETE CASCADE : 부모 데이터를 삭제하면 자식 테이블의 데이터도 함께 삭제
+
+*/
+
+DROP TABLE users;
+
+CREATE TABLE recipes(
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    name VARCHAR(50) NOT NULL,
+    image VARCHAR(200) NOT NULL,
+    descrpition TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+);
+INSERT INTO recipes(user_id, name, image, descrpition)
+VALUES(2, '미나리 소주', 'localhost:3000/soju.jpg', 
+'요리하는 돌아이 윤남노 셰프가 방송에서 만든 미나리 소주');
+
+SELECT * FROM recipes;
