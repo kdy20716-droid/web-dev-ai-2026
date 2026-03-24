@@ -169,7 +169,7 @@ CREATE TABLE recipes(
     user_id INT NOT NULL,
     name VARCHAR(50) NOT NULL,
     image VARCHAR(200) NOT NULL,
-    descrpition TEXT NOT NULL
+    descrpition TEXT NOT NULL,
     FOREIGN KEY (user_id) REFERENCES users(id)
 );
 INSERT INTO recipes (user_id, name, image, descrpition)
