@@ -1,0 +1,70 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url = env("DATABASE_URL")
+}
+
+model User {
+  id       Int    @id @default(autoincrement())
+  name     String @db.VarChar(100)
+  email    String @unique @db.VarChar(200)
+  password String @db.VarChar(200)
+
+  @@map("users")
+}
+
+model Recipe {
+  id          Int      @id @default(autoincrement())
+  user_id     Int?
+  name        String   @db.VarChar(50)
+  image       String   @db.VarChar(200)
+  description String   @db.Text
+  name_eng    String?  @db.VarChar(100)
+  abv         String?  @db.VarChar(20)
+  difficulty  String?  @db.VarChar(20)
+  created_at  DateTime @default(now())
+
+  ingredients Ingredient[]
+  directions  Direction[]
+
+  @@map("recipes")
+}
+
+model Ingredient {
+  id        Int     @id @default(autoincrement())
+  recipe_id Int?
+  name      String  @db.VarChar(100)
+  amount    String  @db.VarChar(50)
+  name_eng  String? @db.VarChar(100)
+  abv       String? @db.VarChar(20)
+
+  recipe Recipe? @relation(fields: [recipe_id], references: [id], onDelete: Cascade)
+
+  @@map("ingredients")
+}
+
+model Direction {
+  id        Int    @id @default(autoincrement())
+  recipe_id Int?
+  content   String @db.Text
+
+  recipe Recipe? @relation(fields: [recipe_id], references: [id], onDelete: Cascade)
+
+  @@map("directions")
+}
+
+model Bar {
+  id       Int      @id @default(autoincrement())
+  name     String   @db.VarChar(100)
+  street   String?  @db.VarChar(100)
+  dong     String?  @db.VarChar(50)
+  address  String?  @db.VarChar(200)
+  lat      Decimal? @db.Decimal(10, 6)
+  lng      Decimal? @db.Decimal(10, 6)
+  keywords String?  @db.VarChar(200)
+
+  @@map("bars")
+}
