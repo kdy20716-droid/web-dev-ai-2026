@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48" fill="none">
+  <!-- 마티니 잔: 볼(삼각형) + 스템 + 받침 -->
+  <path d="M6 8H42L24 26V38" stroke="#7b2d43" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <path d="M15 44H33" stroke="#7b2d43" stroke-width="3.4" stroke-linecap="round"/>
+  <!-- 올리브 가니시 -->
+  <circle cx="30" cy="14" r="3.4" fill="#d4a574"/>
+  <path d="M30 10.6V6" stroke="#7b2d43" stroke-width="2.2" stroke-linecap="round"/>
+</svg>

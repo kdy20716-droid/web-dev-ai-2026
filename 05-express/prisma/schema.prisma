@@ -1,0 +1,77 @@
+// Prisma : CREATE TABLE, SELECT * FROM .. 같은 SQL을 대신 짜주는 ORM 도구
+// ORM (Object Relational Mapping) : 객체와 데이터베이스 테이블을 연결해주는 기술
+// schema.prisma는 설계도라고 보면 됨
+// 기록 안하면서 DB 반영 npx prisma db push
+// 기록하면서 DB 반영 : npx prisma migrate dev -- name init
+// 위에 두 실행문은 자동으로 npx prisma generate 실행
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url = env("DATABASE_URL")
+}
+
+model User {
+  id       Int    @id @default(autoincrement())
+  name     String @db.VarChar(100)
+  email    String @unique @db.VarChar(200)
+  password String @db.VarChar(200)
+
+  @@map("users")
+}
+
+model Recipe {
+  id          Int      @id @default(autoincrement())
+  user_id     Int?
+  name        String   @db.VarChar(50)
+  image       String   @db.VarChar(200)
+  description String   @db.Text
+  name_eng    String?  @db.VarChar(100)
+  abv         String?  @db.VarChar(20)
+  difficulty  String?  @db.VarChar(20)
+  created_at  DateTime @default(now())
+
+  ingredients Ingredient[]
+  directions  Direction[]
+
+  @@map("recipes")
+}
+
+model Ingredient {
+  id        Int     @id @default(autoincrement())
+  recipe_id Int?
+  name      String  @db.VarChar(100)
+  amount    String  @db.VarChar(50)
+  name_eng  String? @db.VarChar(100)
+  abv       String? @db.VarChar(20)
+
+  recipe Recipe? @relation(fields: [recipe_id], references: [id], onDelete: Cascade)
+
+  @@map("ingredients")
+}
+
+model Direction {
+  id        Int    @id @default(autoincrement())
+  recipe_id Int?
+  content   String @db.Text
+
+  recipe Recipe? @relation(fields: [recipe_id], references: [id], onDelete: Cascade)
+
+  @@map("directions")
+}
+
+model Bar {
+  id       Int      @id @default(autoincrement())
+  name     String   @db.VarChar(100)
+  street   String?  @db.VarChar(100)
+  dong     String?  @db.VarChar(50)
+  address  String?  @db.VarChar(200)
+  lat      Decimal? @db.Decimal(10, 6)
+  lng      Decimal? @db.Decimal(10, 6)
+  keywords String?  @db.VarChar(200)
+
+  @@map("bars")
+}

@@ -9,7 +9,7 @@ uv add fastapi uvicorn - 폴더 내 가상환경에 설치
 uvicorn main:app --reload - FastAPI 서버 실행 (main.py 파일 내 app 객체를 찾아서 실행)
 브라우저에서 http://127.0.0.1:8000/ 접속하면 {"Hello": "World"} 출력
 """
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 import pymysql
 
 app = FastAPI()  # FastAPI 객체 생성
@@ -68,9 +68,12 @@ def read_member(members_id: int):
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM members WHERE id = %s", (members_id,))
-    member = cursor.fetchone()
+    row = cursor.fetchone()
+    if row is None:
+        raise HTTPException(status_code=404, detail="Member not found")
+    member = row
     conn.close()
-    return {"member": member}
+    return row
 
 """
 요청 본문과 Pydantic 모델
