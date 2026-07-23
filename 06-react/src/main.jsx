@@ -8,6 +8,7 @@ import { AuthProvider } from "./context/AuthContext";
 
 const queryClient = new QueryClient();
 
+// provider : 그 안에 있는 모든 컴포넌트에게 값을 나눠주는 상자
 createRoot(document.getElementById("root")).render(
   <QueryClientProvider client={queryClient}>
     <AuthProvider>

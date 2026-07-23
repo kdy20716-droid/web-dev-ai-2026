@@ -1,7 +1,10 @@
 import streamlit as st
 import requests
 
-st.title("회원 조회")
+st.markdown(
+    "<h1 style='text-align: center; color: green;'>회원 조회</h1>",
+    unsafe_allow_html=True
+)
 members_id = st.number_input("회원 번호 입력", min_value=1, max_value=100, step=1)
 
 if st.button("조회하기"):

@@ -6,6 +6,7 @@ import RegisterPage from "./pages/RegisterPage";
 import RecipeDetailPage from "./pages/RecipeDetailPage";
 import BarsPage from "./pages/BarsPage";
 
+// 라우터 : url에 따라 어떤 페이지를 보여줄지 결정하는 역할
 const router = createBrowserRouter([
   {
     path: "/",
